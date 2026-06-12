@@ -155,6 +155,19 @@ footer{margin-top:30px;color:var(--dim);font-size:12px;text-align:center}
 .qsi .qb.eL .e{color:#7fbf85}
 .qsi .qb.eM .e{color:var(--amber)}
 .qsi .qb.eH .e{color:var(--red)}
+/* mode switch (Şarkı / Klip) */
+.modes{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:16px;background:var(--panel)}
+.modes button{flex:1;background:transparent;border:0;color:var(--muted);padding:11px 16px;font:inherit;font-size:14px;cursor:pointer;font-family:'Unbounded';font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:.15s}
+.modes button.active{background:var(--amber);color:#1A1206}
+.modes button:not(.active):hover{color:var(--amber2)}
+/* clip scenes */
+.scenes{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.scene{border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:12px 14px}
+.scene .shead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;flex-wrap:wrap}
+.scene .sname{font-family:'Unbounded';font-size:13px;color:var(--amber2);font-weight:500}
+.scene .stxt{font-family:'IBM Plex Mono';font-size:12.5px;line-height:1.55;color:var(--text);white-space:pre-wrap;word-break:break-word}
+.scene textarea{font-family:'IBM Plex Mono';font-size:12.5px;min-height:80px;background:var(--bg)}
+.clip-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 6px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -240,6 +253,13 @@ footer{margin-top:30px;color:var(--dim);font-size:12px;text-align:center}
 
   <div class="presets" id="presetStrip"></div>
 
+  <div class="modes" id="modeSwitch">
+    <button data-m="song" class="active" type="button">🎵 Şarkı Prompt</button>
+    <button data-m="clip" type="button">🎬 Klip Prompt</button>
+  </div>
+
+  <div id="modeSong">
+
   <details class="card" open id="cardLyrics">
     <summary><span class="num">01</span><h2>Şarkı Sözleri &amp; Yapı</h2><span class="hint">bölümler otomatik algılanır</span></summary>
     <div class="body">
@@ -322,6 +342,44 @@ footer{margin-top:30px;color:var(--dim);font-size:12px;text-align:center}
     </div>
   </details>
 
+  </div><!-- /modeSong -->
+
+  <div id="modeClip" hidden>
+    <details class="card" open>
+      <summary><span class="num">C1</span><h2>Şarkı Sözleri &amp; Tema</h2><span class="hint">klip için sözler + tür/duygu/tema</span></summary>
+      <div class="body">
+        <div class="clip-actions">
+          <button class="btn small" id="btnImportLyrics" type="button">⬇ Şarkı modundan sözleri al</button>
+          <button class="btn small ghost" id="btnClipClear" type="button">Klip formunu temizle</button>
+        </div>
+        <textarea id="clipLyrics" placeholder="Şarkı sözlerini buraya yapıştırın. [Verse 1] / [Chorus] gibi bölüm etiketleri sahnelere dönüşür."></textarea>
+        <div class="note">Bölüm etiketleri ([Verse 1], [Chorus] gibi) Sahnelere Böl &amp; AI ile Senaryolaştır butonlarıyla kullanılır.</div>
+        <div class="grid" id="gridClipMeta"></div>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary><span class="num">C2</span><h2>Görsel Stil</h2><span class="hint">stil, palet, kamera, ışık</span></summary>
+      <div class="body"><div class="grid" id="gridClipVisual"></div>
+        <div class="note">Bu seçimler her sahne promptuna otomatik dağıtılır (Veo formatı: subject + action + camera + lighting + style).</div>
+      </div>
+    </details>
+
+    <details class="card" open>
+      <summary><span class="num">C3</span><h2>Sahneler &amp; Çıktı</h2><span class="hint">böl, üret, kopyala</span></summary>
+      <div class="body">
+        <div class="clip-actions">
+          <button class="btn small" id="btnSplitScenes" type="button">🎬 Sahnelere Böl (manuel)</button>
+          <button class="btn small primary" id="btnClipAI" type="button">✨ AI ile Senaryolaştır</button>
+          <span class="spacer"></span>
+          <button class="btn small" id="btnCopyAllScenes" type="button" hidden>📋 Tümünü Kopyala</button>
+        </div>
+        <div class="scenes" id="clipSceneList"></div>
+        <div class="note" id="clipHint">Sözleri yapıştır, sonra <b>Sahnelere Böl</b> (manuel, hızlı) veya <b>AI ile Senaryolaştır</b> (Gemini, profesyonel) butonuna bas.</div>
+      </div>
+    </details>
+  </div><!-- /modeClip -->
+
   <footer>SunoForge — tüm araç ücretsizdir. Çıktılar Suno'nun modeline bağlıdır; aynı prompt'la birden çok üretim deneyin.</footer>
 </div>
 
@@ -361,6 +419,7 @@ footer{margin-top:30px;color:var(--dim);font-size:12px;text-align:center}
     <p style="margin-top:10px"><b style="color:var(--amber2)">✨ AI ile Geliştir:</b> Mevcut prompt'unu Gemini/Claude/GPT'ye gönderip Suno için optimize edilmiş bir versiyon üretir. Anahtar gerekmez, ücretsiz. Console'daki butona bas.</p>
     <p style="margin-top:10px"><b style="color:var(--amber2)">Format:</b> Classic = doğal cümle. Tag = Suno tag'leri (style/voice). Lyrics = lyric editör formatı. Sağ alttan değiştir.</p>
     <p style="margin-top:10px"><b style="color:var(--amber2)">Geçmiş &amp; Export:</b> 🕘 Geçmiş son 30 prompt'u tutar. ⬇ Dışa Aktar tüm form ayarlarını JSON'a kaydeder, ⬆ İçe Aktar geri yükler.</p>
+    <p style="margin-top:10px"><b style="color:var(--amber2)">🎬 Klip Prompt modu:</b> Üstteki sekmeden geç → sözleri yapıştır → tür/duygu/tema + görsel stil seç → <b>Sahnelere Böl</b> her [Verse]/[Chorus] için Veo formatında prompt üretir, <b>AI ile Senaryolaştır</b> Gemini ile profesyonel sahneler döndürür. Her sahneyi tek tek ya da tümünü kopyala.</p>
   </div>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">
     <button class="btn small primary" onclick="dlgHelp.close()">Anladım</button>
@@ -470,7 +529,12 @@ effects:["Tape delay","Spring reverb","Phaser","Chorus","Bitcrush","Convolution 
 anatolianArt:["Mikrotonal süslemeler","Çarpma süsleme","Sürekli vibrato","Glissando geçişleri","Çeyrek ton kayması","Maqam taksim açılışı","Hızlı melismatic koşular","Tril ve mordent süsleri","Uzun nefes/yaylı geçişler"],
 kidsGenre:["Tekerleme","Ninni","Eğitici şarkı","Doğum günü şarkısı","Hayvanlar şarkısı","Sayma şarkısı","Renkler şarkısı","Macera şarkısı","Alfabe şarkısı","Mevsimler şarkısı"],
 adlibs:["yeah","ooh","hey","uh","la la la","na na na","mmm","whoa","oh yeah","ay","yo","uh huh"],
-fusionBalance:["Light fusion (20% accents)","Balanced fusion (50%)","Heavy fusion (80% dominant)","Pure traditional","Pure modern"]
+fusionBalance:["Light fusion (20% accents)","Balanced fusion (50%)","Heavy fusion (80% dominant)","Pure traditional","Pure modern"],
+clipThemes:["Aşk / romantik","Ayrılık / kalp kırıklığı","Şehir gecesi","Yolculuk / road trip","Nostalji / anı","Protesto / öfke","Parti / kutlama","Yalnızlık","Macera / kaçış","Kıyamet sonrası","Rüya / gerçeküstü","Dijital dünya / siber","Sokak yaşamı","Doğa / orman","Çocukluk anıları","Geleceğe yolculuk"],
+clipStyles:["Sinematik (cinematic film grain)","Anime (Japanese 2D animation)","Retro VHS / 80s analog","Live performance video","Soyut sanatsal","Music video classic 90s","Documentary handheld","Animation 2D Flash","3D CGI photoreal","Found footage horror","Black & white film noir","Surreal dreamscape","Stop-motion","Cyberpunk holographic","Wes Anderson symmetric"],
+clipPalette:["Neon (purple/cyan cyberpunk)","Pastel soft dreamy","Monochrome (black & white)","Warm sunset (orange/red)","Cold cinematic teal-blue","Vintage sepia","Earth tones (brown/green)","Vivid saturated pop","Faded retro film","Glitchy oversaturated","Cyberpunk magenta-teal","Anatolian warm earth (terracotta)","High contrast noir","Muted pastel film"],
+clipCamera:["Drone aerial sweep","Close-up portrait","Slow-motion","Dolly-in tracking","Handheld documentary","POV first-person","Whip pan transition","Steadicam follow","Static wide shot","Crane shot","Macro detail","Dutch tilt angle","Rack focus pull","Overhead bird's eye","Long zoom pull-back"],
+clipLighting:["Neon-lit (cyberpunk pink/teal)","Golden hour sunset","Dim studio (single key light)","Hard noir shadows","Soft natural daylight","Stage spotlight (concert)","Practical fluorescent","Volumetric god rays","Candlelight intimate","Overcast diffused","Lightning storm flashes","Underwater diffraction","Backlit silhouette","Window light side"]
 };
 const PRESETS = [
  {name:"🎤 Türkçe Duygusal Pop-Rap", v:{genre:"Hip Hop",sub:"Emotional Rap",fusion:"Arabesk",lang:"Turkish",turk:"Türkçe Duygusal Pop-Rap",mood:"Melancholic",tempo:"Medium, 90-120 BPM",harmony:"Minor",lead:"Piano",acc:"Turkish arabesque strings",bass:"808 bass",perc:"Tight snare, sharp hi-hats",vt:"Male vocal",vs:"Melodic rap flow, half-sung",vtim:"Husky",vfx:"Doubled vocals",rangeM:"Baritone",mix:"Dark mixing",prod:"Polished radio-ready mix",exclude:"autotune, EDM drop, happy pop",free:"clear Turkish pronunciation, emotional hook"}},
@@ -688,6 +752,7 @@ function parts(){
   return p;
 }
 function build(){
+  if(currentMode==='clip')return;
   if(manualEdit)return;
   const p=parts();let out='';
   if(format==='classic'){
@@ -938,6 +1003,143 @@ $('hubToggle').onclick=()=>{
 
 /* ====== HELP ====== */
 $('btnHelp').onclick=()=>$('dlgHelp').showModal();
+
+/* ====== CLIP MODE ====== */
+let currentMode='song';
+const gCM=$('gridClipMeta'),gCV=$('gridClipVisual');
+mkSelect('clipGenre','Şarkı Türü (Genre)',D.genres,gCM);
+mkSelect('clipMood','Duygu (Mood)',D.moods,gCM);
+mkSelect('clipTheme','Klip Teması',D.clipThemes,gCM);
+mkSelect('clipStyle','Görsel Stil',D.clipStyles,gCV);
+mkSelect('clipPalette','Renk Paleti',D.clipPalette,gCV);
+mkSelect('clipCamera','Kamera Dili',D.clipCamera,gCV);
+mkSelect('clipLight','Işık',D.clipLighting,gCV);
+
+document.querySelectorAll('#modeSwitch button').forEach(b=>{
+  b.onclick=()=>{
+    currentMode=b.dataset.m;
+    document.querySelectorAll('#modeSwitch button').forEach(x=>x.classList.toggle('active',x===b));
+    $('modeSong').hidden=currentMode!=='song';
+    $('modeClip').hidden=currentMode!=='clip';
+    document.querySelector('.console').style.display=currentMode==='clip'?'none':'';
+    document.body.style.paddingBottom=currentMode==='clip'?'30px':'';
+    if(currentMode==='song')build();
+  };
+});
+
+$('btnImportLyrics').onclick=()=>{
+  const src=$('lyrics').value.trim();
+  if(!src){toast('Şarkı modunda söz yok');return;}
+  $('clipLyrics').value=src;toast('Sözler kopyalandı');
+};
+$('btnClipClear').onclick=()=>{
+  $('clipLyrics').value='';
+  ['clipGenre','clipMood','clipTheme','clipStyle','clipPalette','clipCamera','clipLight'].forEach(k=>{if(S[k])S[k].value='';});
+  $('clipSceneList').innerHTML='';$('btnCopyAllScenes').hidden=true;$('clipHint').hidden=false;
+};
+
+function detectClipScenes(){
+  const text=$('clipLyrics').value;
+  if(!text.trim())return [];
+  const re=/\[([^\]\n]{2,40})\][^\n]*\n?/g;
+  const matches=[];let m;
+  while((m=re.exec(text))!==null)matches.push({tag:m[1].trim().split('(')[0].trim(),start:m.index,end:m.index+m[0].length});
+  if(!matches.length)return [{tag:'Full Track',body:text.trim().slice(0,400)}];
+  const out=[];
+  for(let i=0;i<matches.length;i++){
+    const cur=matches[i],next=matches[i+1];
+    const body=text.slice(cur.end,next?next.start:text.length).trim();
+    out.push({tag:cur.tag,body});
+  }
+  return out;
+}
+
+function clipCtx(){
+  return {
+    genre:val('clipGenre'),mood:val('clipMood'),theme:val('clipTheme'),
+    style:val('clipStyle'),palette:val('clipPalette'),
+    camera:val('clipCamera'),light:val('clipLight')
+  };
+}
+function buildScenePrompt(scene,ctx){
+  const subj=ctx.theme?ctx.theme.toLowerCase().split('/')[0].trim():'a singer/character';
+  const action=scene.body?scene.body.replace(/\s+/g,' ').slice(0,140):'performing the song';
+  const camera=ctx.camera||'cinematic medium shot';
+  const light=ctx.light||'natural daylight';
+  const palette=ctx.palette?ctx.palette+' palette':'rich cinematic palette';
+  const style=ctx.style?ctx.style+' aesthetic':'cinematic music video aesthetic';
+  const mood=ctx.mood?ctx.mood.toLowerCase()+' mood':'';
+  const genre=ctx.genre?ctx.genre.toLowerCase()+' vibe':'';
+  const parts=[
+    `Subject: ${subj} in a ${genre||'music-video'} scene, ${mood}`.replace(/, $/,''),
+    `Action: ${action}`,
+    `Camera: ${camera}`,
+    `Lighting: ${light}`,
+    `Palette: ${palette}`,
+    `Style: ${style}`
+  ].filter(x=>!/:\s*$/.test(x));
+  return parts.join('. ')+'.';
+}
+
+function renderScenes(scenes){
+  const host=$('clipSceneList');host.innerHTML='';
+  if(!scenes.length){toast('Söz boş');return;}
+  scenes.forEach((s,i)=>{
+    const d=document.createElement('div');d.className='scene';
+    const head=document.createElement('div');head.className='shead';
+    head.innerHTML=`<div class="sname">Sahne ${i+1} · [${s.tag}]</div>`;
+    const cb=document.createElement('button');cb.className='btn small';cb.textContent='📋 Kopyala';
+    cb.onclick=()=>{navigator.clipboard.writeText(ta.value);toast('Sahne '+(i+1)+' kopyalandı');};
+    head.appendChild(cb);
+    const ta=document.createElement('textarea');ta.value=s.prompt;ta.rows=4;ta.spellcheck=false;
+    d.appendChild(head);d.appendChild(ta);host.appendChild(d);
+  });
+  $('btnCopyAllScenes').hidden=false;$('clipHint').hidden=true;
+}
+
+$('btnSplitScenes').onclick=()=>{
+  const ctx=clipCtx();
+  const raw=detectClipScenes();
+  if(!raw.length){toast('Önce sözleri yapıştırın');return;}
+  const scenes=raw.map(s=>({tag:s.tag,prompt:buildScenePrompt(s,ctx)}));
+  renderScenes(scenes);
+  toast(scenes.length+' sahne üretildi (manuel)');
+};
+
+$('btnCopyAllScenes').onclick=()=>{
+  const all=[...$('clipSceneList').querySelectorAll('.scene')].map((d,i)=>{
+    const tag=d.querySelector('.sname').textContent;
+    return tag+'\n'+d.querySelector('textarea').value;
+  }).join('\n\n---\n\n');
+  navigator.clipboard.writeText(all);toast('Tüm sahneler kopyalandı');
+};
+
+$('btnClipAI').onclick=async()=>{
+  const ly=$('clipLyrics').value.trim();
+  if(!ly){toast('Önce sözleri yapıştırın');return;}
+  const ctx=clipCtx();
+  const btn=$('btnClipAI');btn.disabled=true;btn.textContent='Senaryolaştırılıyor…';
+  const sys=`You are an expert Veo / Sora music video prompt engineer. Given song lyrics with [Section] tags (Verse, Chorus, Bridge, etc.), produce ONE Veo prompt per section. Output STRICT JSON only: {"scenes":[{"section":"<tag>","prompt":"<one-sentence English Veo prompt>"},...]}. Each prompt must follow Veo structure: Subject + Action + Camera + Lighting + Color Palette + Style + Mood — concrete and visual, under 320 chars, no music-production words. Match each section's emotional arc from the lyrics. Maintain visual continuity across scenes (same character, palette, style). Never include lyrics text verbatim; describe what is happening visually.`;
+  const userMsg=`Lyrics:\n${ly}\n\nVisual context:\n- Genre: ${ctx.genre||'unspecified'}\n- Mood: ${ctx.mood||'unspecified'}\n- Theme: ${ctx.theme||'open'}\n- Style: ${ctx.style||'cinematic music video'}\n- Palette: ${ctx.palette||'rich cinematic'}\n- Camera language: ${ctx.camera||'varied'}\n- Lighting: ${ctx.light||'natural'}\n\nReturn JSON only.`;
+  try{
+    const r=await fetch(AI_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({provider:'gemini',system:sys,prompt:userMsg})});
+    if(r.status===429)throw new Error('Günlük AI hakkı doldu, yarın tekrar deneyin');
+    if(!r.ok)throw new Error('sunucu hatası ('+r.status+')');
+    const data=await r.json();
+    let txt=(data.text||'').trim();
+    txt=txt.replace(/^```(?:json)?\s*/i,'').replace(/```\s*$/,'').trim();
+    let parsed;try{parsed=JSON.parse(txt);}catch(e){
+      const m=txt.match(/\{[\s\S]*\}/);if(!m)throw new Error('AI JSON döndürmedi');
+      parsed=JSON.parse(m[0]);
+    }
+    const scenes=(parsed.scenes||[]).map(s=>({tag:s.section||'Scene',prompt:s.prompt||''}));
+    if(!scenes.length)throw new Error('AI sahne döndürmedi');
+    renderScenes(scenes);
+    toast(scenes.length+' sahne AI ile üretildi 🎬');
+  }catch(err){toast('AI: '+err.message);}
+  btn.disabled=false;btn.textContent='✨ AI ile Senaryolaştır';
+};
 
 /* PWA service worker */
 if('serviceWorker' in navigator && location.protocol==='https:')
