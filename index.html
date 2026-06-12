@@ -1015,6 +1015,40 @@ function bestMatch(needle,hay){
   return hit||null;
 }
 const FILL_FIELDS=['genre','sub','fusion','lang','turk','makam','tempo','timesig','mood','harmony','lead','acc','bass','perc','vt','vs','vtim','vfx','rangeF','rangeM','mix','prod','structure','energy','tpSub','fb','ana','syn','mod','fx','kidsG'];
+function listForField(id){
+  if(id==='genre')return D.genres;
+  if(id==='sub')return D.subgenres[S.genre&&S.genre.value]||[];
+  if(id==='fusion')return D.fusions;
+  if(id==='lang')return D.languages;
+  if(id==='turk')return D.turkStyles.map(t=>t[0]);
+  if(id==='makam')return D.makams;
+  if(id==='tempo')return D.tempos.map(t=>t[0]);
+  if(id==='timesig')return D.timesigs;
+  if(id==='mood')return D.moods;
+  if(id==='harmony')return D.harmony;
+  if(id==='lead')return D.leads;
+  if(id==='acc')return D.accomp;
+  if(id==='bass')return D.bass;
+  if(id==='perc')return D.perc;
+  if(id==='vt')return D.vocalTypes.map(v=>v[0]);
+  if(id==='vs')return D.vocalStyles;
+  if(id==='vtim')return D.vocalTimbres;
+  if(id==='vfx')return D.vocalFx;
+  if(id==='rangeF')return D.rangesF;
+  if(id==='rangeM')return D.rangesM;
+  if(id==='mix')return D.mixChar;
+  if(id==='prod')return D.prodStyle;
+  if(id==='structure')return D.structures;
+  if(id==='energy')return D.energy;
+  if(id==='tpSub')return D.turkPopSub;
+  if(id==='fb')return D.fusionBalance;
+  if(id==='ana')return D.anatolianArt;
+  if(id==='syn')return D.synthesis;
+  if(id==='mod')return D.modulation;
+  if(id==='fx')return D.effects;
+  if(id==='kidsG')return D.kidsGenre;
+  return [];
+}
 $('btnAIFill').onclick=async()=>{
   const filled={},empty=[];
   FILL_FIELDS.forEach(id=>{
@@ -1023,29 +1057,11 @@ $('btnAIFill').onclick=async()=>{
   });
   if(!empty.length){toast('Tüm alanlar zaten dolu');return;}
   const btn=$('btnAIFill');btn.disabled=true;const orig=btn.textContent;btn.textContent='Dolduruluyor…';
-  const opts={
-    genres:D.genres,subgenres:D.subgenres,fusions:D.fusions,languages:D.languages,
-    turkStyles:D.turkStyles.map(t=>t[0]),makams:D.makams,
-    tempos:D.tempos.map(t=>t[0]),timesigs:D.timesigs,moods:D.moods,harmony:D.harmony,
-    leads:D.leads,accomp:D.accomp,bass:D.bass,perc:D.perc,
-    vocalTypes:D.vocalTypes.map(v=>v[0]),vocalStyles:D.vocalStyles,vocalTimbres:D.vocalTimbres,vocalFx:D.vocalFx,
-    rangesF:D.rangesF,rangesM:D.rangesM,mixChar:D.mixChar,prodStyle:D.prodStyle,
-    structures:D.structures,energy:D.energy,
-    turkPopSub:D.turkPopSub,fusionBalance:D.fusionBalance,anatolianArt:D.anatolianArt,
-    synthesis:D.synthesis,modulation:D.modulation,effects:D.effects,kidsGenre:D.kidsGenre
-  };
-  const fieldMap={
-    genre:'genres',sub:'subgenres[<genre>]',fusion:'fusions',lang:'languages',
-    turk:'turkStyles',makam:'makams',tempo:'tempos',timesig:'timesigs',
-    mood:'moods',harmony:'harmony',lead:'leads',acc:'accomp',bass:'bass',perc:'perc',
-    vt:'vocalTypes',vs:'vocalStyles',vtim:'vocalTimbres',vfx:'vocalFx',
-    rangeF:'rangesF',rangeM:'rangesM',mix:'mixChar',prod:'prodStyle',
-    structure:'structures',energy:'energy',
-    tpSub:'turkPopSub',fb:'fusionBalance',ana:'anatolianArt',
-    syn:'synthesis',mod:'modulation',fx:'effects',kidsG:'kidsGenre'
-  };
-  const sys=`You are an expert Suno music prompt assistant. The user has partially filled a music prompt form. Pick coherent values for the EMPTY fields ONLY using STRICTLY values from the provided options. Output STRICT JSON only: {"selections":{"<fieldId>":"<exact verbatim string from option list>"}}. Rules: (1) Each value MUST be exactly verbatim from the corresponding option list (case-sensitive). Never invent. (2) Skip any field where no good musical fit exists. (3) Combination must be musically coherent and respect the user's existing choices. (4) Only fill rangeF when vocal type is female-leaning; only fill rangeM when male-leaning; skip both if instrumental. (5) Only fill tpSub when Turkish Pop context. (6) Only fill kidsG when child vocal context. (7) Only fill makam/turk/ana when Turkish/Anatolian context. (8) Only fill syn/mod/fx when electronic/synthwave/ASM context. (9) Genre subgenre (sub) must be from subgenres[<genre>] keyed by chosen genre. (10) Always pick 8-15 fields if possible to give a complete musical picture.`;
-  const userMsg=`Currently filled by user:\n${JSON.stringify(filled,null,2)}\n\nEmpty fields to consider filling (pick exact values where appropriate):\n${empty.join(', ')}\n\nfieldMap (field → list inside availableOptions):\n${JSON.stringify(fieldMap)}\n\navailableOptions:\n${JSON.stringify(opts)}\n\nReturn JSON only.`;
+  // Send only the lists for empty fields, keep payload small
+  const optsForEmpty={};
+  empty.forEach(id=>{optsForEmpty[id]=listForField(id);});
+  const sys=`Suno music prompt assistant. User has partial form. Fill ONLY empty fields, picking exact verbatim strings from the per-field options. Output STRICT JSON: {"selections":{"<id>":"<exact string>"}}. Rules: pick musically coherent values matching the user's existing choices; skip a field if no good fit; only fill rangeF for female vocal context, rangeM for male; skip Turkish-only fields (turk/makam/ana/tpSub) unless Turkish context; skip syn/mod/fx unless electronic-leaning; skip kidsG unless child vocal. Aim 8-15 picks.`;
+  const userMsg=`Filled by user:\n${JSON.stringify(filled)}\n\nEmpty fields (with their option lists):\n${JSON.stringify(optsForEmpty)}\n\nReturn JSON only.`;
   try{
     const r=await fetch(AI_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},
       body:JSON.stringify({provider:'gemini',system:sys,prompt:userMsg})});
