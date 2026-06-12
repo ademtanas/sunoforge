@@ -1,6 +1,6 @@
 // SunoForge PWA service worker
 // GÜNCELLEME YAYINLARKEN: CACHE adındaki sürümü artırın (sunoforge-v1 -> v2)
-const CACHE = "sunoforge-v2";
+const CACHE = "sunoforge-v3";
 const ASSETS = ["./", "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));

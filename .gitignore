@@ -1,0 +1,4 @@
+.firebase/
+.wrangler/
+node_modules/
+*.log

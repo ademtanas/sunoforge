@@ -117,6 +117,44 @@ footer{margin-top:30px;color:var(--dim);font-size:12px;text-align:center}
   .console textarea{min-height:58px;font-size:14px}
   .toast{bottom:auto;top:14px}
 }
+/* hub — mod seçici (8 hızlı başlangıç kartı) */
+.hub{margin-bottom:18px}
+.hub-toggle{font-family:'Unbounded';font-size:12px;color:var(--muted);background:transparent;border:1px dashed var(--line);padding:6px 12px;border-radius:99px;cursor:pointer;margin-bottom:14px;display:inline-flex;align-items:center;gap:6px}
+.hub-toggle:hover{border-color:var(--amber);color:var(--amber2)}
+.hub-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.hub.collapsed .hub-grid{display:none}
+.hub-card{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px 18px 38px;cursor:pointer;text-align:left;color:var(--text);font:inherit;transition:transform .25s,border-color .25s,box-shadow .25s;overflow:hidden}
+.hub-card::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(245,169,59,.08),rgba(120,80,220,.08));opacity:0;transition:opacity .3s;z-index:0}
+.hub-card>*{position:relative;z-index:1}
+.hub-card:hover::before{opacity:1}
+.hub-card:hover{transform:translateY(-4px);border-color:var(--amber)}
+.hub-card .icon{font-size:2.4rem;margin-bottom:10px;line-height:1;display:block}
+.hub-card .title{font-family:'Unbounded';font-weight:500;font-size:15px;margin-bottom:6px}
+.hub-card .desc{font-size:12.5px;color:var(--muted);line-height:1.45;margin-bottom:10px;min-height:36px}
+.hub-card .tags{display:flex;gap:6px;flex-wrap:wrap}
+.hub-card .tags span{font-size:10.5px;background:rgba(245,169,59,.1);border:1px solid rgba(245,169,59,.3);color:var(--amber2);padding:2px 9px;border-radius:99px;font-weight:500}
+.hub-card .arrow{position:absolute;right:14px;bottom:12px;color:var(--dim);transition:color .25s,transform .25s;font-size:1.4rem;z-index:1}
+.hub-card:hover .arrow{color:var(--amber);transform:translateX(3px)}
+.hub-card.hc-asm:hover{box-shadow:0 14px 36px rgba(79,172,254,.25)}
+.hub-card.hc-kids:hover{box-shadow:0 14px 36px rgba(255,107,107,.25)}
+.hub-card.hc-tpop:hover{box-shadow:0 14px 36px rgba(255,87,51,.25)}
+.hub-card.hc-vocal:hover{box-shadow:0 14px 36px rgba(138,43,226,.25)}
+.hub-card.hc-psy:hover{box-shadow:0 14px 36px rgba(255,0,255,.3)}
+.hub-card.hc-adv:hover{box-shadow:0 14px 36px rgba(240,147,251,.25)}
+.hub-card.hc-det:hover{box-shadow:0 14px 36px rgba(118,75,162,.25)}
+.hub-card.hc-basic:hover{box-shadow:0 14px 36px rgba(102,126,234,.25)}
+/* ad-libs */
+.chiplist{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px}
+.chiplist .ali{cursor:pointer;border:1px solid var(--line);background:var(--bg);color:var(--muted);padding:5px 11px;border-radius:99px;font-size:12.5px;transition:.15s}
+.chiplist .ali:hover,.chiplist .ali.on{border-color:var(--amber);color:var(--amber2)}
+/* quick section insert */
+.qsi{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+.qsi .qb{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--bg);color:var(--text);padding:5px 10px;border-radius:8px;font-size:12px;cursor:pointer;font:inherit;font-size:12px}
+.qsi .qb:hover{border-color:var(--amber);color:var(--amber2)}
+.qsi .qb .e{font-size:10.5px;color:var(--dim);border-left:1px solid var(--line);padding-left:6px;margin-left:2px}
+.qsi .qb.eL .e{color:#7fbf85}
+.qsi .qb.eM .e{color:var(--amber)}
+.qsi .qb.eH .e{color:var(--red)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -130,6 +168,7 @@ footer{margin-top:30px;color:var(--dim);font-size:12px;text-align:center}
     <div class="toolbar">
       <button class="btn small" id="btnRandom">🎲 Şanslıyım</button>
       <button class="btn small" id="btnHistory">🕘 Geçmiş</button>
+      <button class="btn small" id="btnHelp">❓ Yardım</button>
       <button class="btn small" id="btnExport">⬇ Ayarları Dışa Aktar</button>
       <button class="btn small" id="btnImport">⬆ İçe Aktar</button>
       <input type="file" id="fileImport" accept=".json" hidden>
@@ -137,14 +176,87 @@ footer{margin-top:30px;color:var(--dim);font-size:12px;text-align:center}
     </div>
   </header>
 
+  <section class="hub" id="hub">
+    <button class="hub-toggle" id="hubToggle" type="button">▾ Hızlı başlangıç kartlarını gizle</button>
+    <div class="hub-grid" id="hubGrid">
+      <button class="hub-card hc-basic" type="button" data-preset="🎹 Temel (Hızlı)">
+        <div class="icon">🎹</div>
+        <div class="title">Temel Suno</div>
+        <div class="desc">Basit ve hızlı prompt. Başlangıç için ideal.</div>
+        <div class="tags"><span>Beginner</span><span>Fast</span><span>Simple</span></div>
+        <div class="arrow">→</div>
+      </button>
+      <button class="hub-card hc-det" type="button" data-preset="💔 Akustik Balad">
+        <div class="icon">🎸</div>
+        <div class="title">Detaylı Suno</div>
+        <div class="desc">Daha fazla kontrol; akustik balad şablonuyla başla.</div>
+        <div class="tags"><span>Intermediate</span><span>Detailed</span><span>Customizable</span></div>
+        <div class="arrow">→</div>
+      </button>
+      <button class="hub-card hc-adv" type="button" data-preset="__ADVANCED__">
+        <div class="icon">🛠️</div>
+        <div class="title">Gelişmiş Suno</div>
+        <div class="desc">Profesyonel kontrol. Tüm parametreler — tam form.</div>
+        <div class="tags"><span>Advanced</span><span>Pro</span><span>Full Control</span></div>
+        <div class="arrow">→</div>
+      </button>
+      <button class="hub-card hc-asm" type="button" data-preset="🎵 ASM Anatolian Sonic Mix">
+        <div class="icon">🎚️</div>
+        <div class="title">Anatolian Sonic Mix</div>
+        <div class="desc">Modülasyon ve efekt odaklı. Anadolu füzyonu için tasarlandı.</div>
+        <div class="tags"><span>Modulation</span><span>FX</span><span>Anatolian</span></div>
+        <div class="arrow">→</div>
+      </button>
+      <button class="hub-card hc-kids" type="button" data-preset="🎪 Çocuk Şarkısı">
+        <div class="icon">🐈</div>
+        <div class="title">Çocuk Şarkıları</div>
+        <div class="desc">Çocuk şarkıları için şablon. Eğitici ve eğlenceli.</div>
+        <div class="tags"><span>Kids</span><span>Educational</span><span>Fun</span></div>
+        <div class="arrow">→</div>
+      </button>
+      <button class="hub-card hc-tpop" type="button" data-preset="🎤 Türk Pop (Energy)">
+        <div class="icon">🎤</div>
+        <div class="title">Türk Pop</div>
+        <div class="desc">Türk pop'una özel; bölüm bazlı enerji geçişleriyle.</div>
+        <div class="tags"><span>Turkish Pop</span><span>Energy</span><span>Smart</span></div>
+        <div class="arrow">→</div>
+      </button>
+      <button class="hub-card hc-vocal" type="button" data-preset="🎙️ Vokal Karakter">
+        <div class="icon">🎙️</div>
+        <div class="title">Vokal Karakter</div>
+        <div class="desc">Sadece vokal odaklı — register ve doku ayarları.</div>
+        <div class="tags"><span>Vocals</span><span>Register</span><span>Texture</span></div>
+        <div class="arrow">→</div>
+      </button>
+      <button class="hub-card hc-psy" type="button" data-preset="🌀 Anatolian Psychedelic">
+        <div class="icon">🌀</div>
+        <div class="title">Anatolian Psychedelic</div>
+        <div class="desc">Türk psikedelik rock; akıllı randomizasyon hazır.</div>
+        <div class="tags"><span>Psychedelic</span><span>Anatolian</span><span>Random</span></div>
+        <div class="arrow">→</div>
+      </button>
+    </div>
+  </section>
+
   <div class="presets" id="presetStrip"></div>
 
   <details class="card" open id="cardLyrics">
     <summary><span class="num">01</span><h2>Şarkı Sözleri &amp; Yapı</h2><span class="hint">bölümler otomatik algılanır</span></summary>
     <div class="body">
+      <div class="subhead">Bölüm Ekle (enerji seviyesi ile)</div>
+      <div class="qsi" id="energyToggle">
+        <button class="qb" type="button" data-e="" title="Etiketsiz">Etiketsiz</button>
+        <button class="qb eL" type="button" data-e="Düşük">⚡<span class="e">Düşük</span></button>
+        <button class="qb eM" type="button" data-e="Orta">⚡⚡<span class="e">Orta</span></button>
+        <button class="qb eH" type="button" data-e="Yüksek">⚡⚡⚡<span class="e">Yüksek</span></button>
+      </div>
       <div class="secbtns" id="secBtns"></div>
       <textarea id="lyrics" placeholder="[Intro]&#10;&#10;[Verse 1]&#10;Sözlerinizi buraya yazın...&#10;&#10;[Chorus]&#10;..."></textarea>
-      <div class="note">Butonlarla bölüm ekleyin — Verse/Chorus otomatik numaralanır. Sözleri yazınca her bölüm için aşağıda vokal &amp; enstrüman ifade seçimleri açılır.</div>
+      <div class="note">Üstte enerji seç (Düşük/Orta/Yüksek), sonra bölüm butonuna bas — etiket lyrics'e enerjisiyle eklenir. Verse/Chorus otomatik numaralanır.</div>
+      <label class="field" style="margin-top:10px"><b>Ad-libs (vokal süslemeler) — virgülle ayırın</b>
+        <input type="text" id="adlib" placeholder="örn: yeah, ooh, la la la">
+      </label>
+      <div class="chiplist" id="adlibChips"></div>
       <div id="perSection"></div>
     </div>
   </details>
@@ -203,6 +315,13 @@ footer{margin-top:30px;color:var(--dim);font-size:12px;text-align:center}
     </div>
   </details>
 
+  <details class="card">
+    <summary><span class="num">10</span><h2>Synthesis &amp; Modulation</h2><span class="hint">ASM / elektronik için</span></summary>
+    <div class="body"><div class="grid" id="gridSynth"></div>
+      <div class="note">Synth/modülasyon/efekt seçimleri prompt'ın mix &amp; prodüksiyon cümlesine eklenir.</div>
+    </div>
+  </details>
+
   <footer>SunoForge — tüm araç ücretsizdir. Çıktılar Suno'nun modeline bağlıdır; aynı prompt'la birden çok üretim deneyin.</footer>
 </div>
 
@@ -230,6 +349,23 @@ footer{margin-top:30px;color:var(--dim);font-size:12px;text-align:center}
 </div>
 
 <div class="toast" id="toast">Kopyalandı</div>
+
+<dialog id="dlgHelp"><h3>❓ Yardım &amp; Kullanım Rehberi</h3>
+  <div style="font-size:13.5px;line-height:1.65;color:var(--text)">
+    <p><b style="color:var(--amber2)">Hızlı başlangıç:</b> Üstteki 8 karttan birini seç → form otomatik dolar → ▼ aşağı kaydır → Console'da prompt'u kopyala. <i>Şanslıyım</i> butonu tamamen rastgele üretir.</p>
+    <p style="margin-top:10px"><b style="color:var(--amber2)">Bölümler &amp; Enerji:</b> Şarkı sözleri kartında üstte enerji (Düşük/Orta/Yüksek) seç, sonra Verse/Chorus butonuna bas; etiket lyrics'e <code>[Verse — Energy: Orta]</code> olarak iner. Her bölüm için altta vokal/lead enstrüman ifadesi açılır.</p>
+    <p style="margin-top:10px"><b style="color:var(--amber2)">Türk müziği &amp; Makam:</b> 28 makam (Hicaz, Rast, Uşşak…), TSM/Arabesk/Anadolu Rock stilleri, Anatolian Articulation (mikrotonal süslemeler, glissando, taksim). Türk Pop modu için ayrı alt-tür listesi var.</p>
+    <p style="margin-top:10px"><b style="color:var(--amber2)">Dünya müzikleri:</b> Bölge seç → gelenek seç → enstrüman seç (kaskat). Afrika, Asya, Latin, Balkan, Andalusi vs.</p>
+    <p style="margin-top:10px"><b style="color:var(--amber2)">Synthesis &amp; Modulation:</b> ASM/elektronik için ayrı kart: synth tipi (analog warm pads, FM, granular…), modülasyon (LFO, sidechain, vibrato), efektler (tape delay, spring reverb, phaser…).</p>
+    <p style="margin-top:10px"><b style="color:var(--amber2)">Vokal:</b> Cinsiyet → tarz → tını → efekt → kadın/erkek aralık. Ad-libs alanı: chip'lerden seç ya da serbest yaz, prompt sonuna iliştirilir.</p>
+    <p style="margin-top:10px"><b style="color:var(--amber2)">✨ AI ile Geliştir:</b> Mevcut prompt'unu Gemini/Claude/GPT'ye gönderip Suno için optimize edilmiş bir versiyon üretir. Anahtar gerekmez, ücretsiz. Console'daki butona bas.</p>
+    <p style="margin-top:10px"><b style="color:var(--amber2)">Format:</b> Classic = doğal cümle. Tag = Suno tag'leri (style/voice). Lyrics = lyric editör formatı. Sağ alttan değiştir.</p>
+    <p style="margin-top:10px"><b style="color:var(--amber2)">Geçmiş &amp; Export:</b> 🕘 Geçmiş son 30 prompt'u tutar. ⬇ Dışa Aktar tüm form ayarlarını JSON'a kaydeder, ⬆ İçe Aktar geri yükler.</p>
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">
+    <button class="btn small primary" onclick="dlgHelp.close()">Anladım</button>
+  </div>
+</dialog>
 
 <dialog id="dlgHistory"><h3>Prompt Geçmişi</h3><div id="histList"></div>
   <div class="row" style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
@@ -325,7 +461,16 @@ mixChar:["Warm mixing","Bright mixing","Dark mixing","Balanced mixing"],
 prodStyle:["Clean modern studio production","Lo-fi vintage warmth","Minimal sparse arrangement","Layered and complex production","Raw live performance feel","Atmospheric spacious production","Polished radio-ready mix","Analog tape saturation","Close-mic intimate recording"],
 structures:["Verse-Chorus (pop/rock standard)","Verse-Chorus-Bridge (extended pop)","Verse-Pre-Chorus-Chorus (modern pop)","AABA pattern (ballad/jazz)","AAA strophic (folk/narrative)","Verse-Drop (EDM/trap)","Verse-Buildup-Drop (dance)","Intro-Verse-Chorus-Outro (minimal)","Through-composed (progressive)","Call and response (blues/gospel)","Looping structure (lo-fi/ambient)"],
 energy:["Build and sustain (epic)","Crescendo, slow start strong finish","Decrescendo, fade out style","Wave, dynamic contrast","Consistent driving energy","Explosive bookends, soft middle","Gradual progressive build","Explosive start then stable","Climactic peak in the middle","Shifting experimental dynamics"],
-sections:["Intro","Verse","Pre-Chorus","Chorus","Hook","Bridge","Solo","Drop","Break","Instrumental","Outro"]
+sections:["Intro","Verse","Pre-Chorus","Chorus","Hook","Bridge","Solo","Drop","Break","Instrumental","Outro"],
+turkPopSub:["90s Türkçe Pop","Akustik Türk Pop","Elektro Türk Pop","Türkçe RnB","Türkçe Slow","Türkçe Rock-Pop","Anadolu Pop","Synthwave Türk Pop","Latin Türk Pop","Klasik Türk Pop","Türkçe Indie Pop","Türkçe Dans Pop"],
+energyLevels:["Düşük","Orta","Yüksek"],
+synthesis:["Analog warm pads","Wavetable bright lead","FM percussive","Granular textures","Subtractive bass","Plucked synth","Modular generative","Chip-tune square","Vintage Moog bass","Detuned supersaw"],
+modulation:["Slow LFO sweep","Sample-and-hold","Pitch bend ornament","Filter envelope","Sidechain pumping","Polyrhythmic gating","Vibrato modulation","Random Sample-Hold","Tape wow and flutter"],
+effects:["Tape delay","Spring reverb","Phaser","Chorus","Bitcrush","Convolution reverb","Granular pitch shift","Auto-wah","Shimmer reverb","Tremolo","Flanger"],
+anatolianArt:["Mikrotonal süslemeler","Çarpma süsleme","Sürekli vibrato","Glissando geçişleri","Çeyrek ton kayması","Maqam taksim açılışı","Hızlı melismatic koşular","Tril ve mordent süsleri","Uzun nefes/yaylı geçişler"],
+kidsGenre:["Tekerleme","Ninni","Eğitici şarkı","Doğum günü şarkısı","Hayvanlar şarkısı","Sayma şarkısı","Renkler şarkısı","Macera şarkısı","Alfabe şarkısı","Mevsimler şarkısı"],
+adlibs:["yeah","ooh","hey","uh","la la la","na na na","mmm","whoa","oh yeah","ay","yo","uh huh"],
+fusionBalance:["Light fusion (20% accents)","Balanced fusion (50%)","Heavy fusion (80% dominant)","Pure traditional","Pure modern"]
 };
 const PRESETS = [
  {name:"🎤 Türkçe Duygusal Pop-Rap", v:{genre:"Hip Hop",sub:"Emotional Rap",fusion:"Arabesk",lang:"Turkish",turk:"Türkçe Duygusal Pop-Rap",mood:"Melancholic",tempo:"Medium, 90-120 BPM",harmony:"Minor",lead:"Piano",acc:"Turkish arabesque strings",bass:"808 bass",perc:"Tight snare, sharp hi-hats",vt:"Male vocal",vs:"Melodic rap flow, half-sung",vtim:"Husky",vfx:"Doubled vocals",rangeM:"Baritone",mix:"Dark mixing",prod:"Polished radio-ready mix",exclude:"autotune, EDM drop, happy pop",free:"clear Turkish pronunciation, emotional hook"}},
@@ -334,7 +479,13 @@ const PRESETS = [
  {name:"🌙 Lo-fi Chill", v:{genre:"Lo-fi",sub:"Lo-fi Hip Hop",mood:"Chill & relaxed",tempo:"Slow, 60-80 BPM",harmony:"Minor",lead:"Electric piano (Rhodes)",acc:"Pad layer",bass:"Deep smooth sub bass",perc:"Drum machine",vt:"Instrumental, no vocals",mix:"Warm mixing",prod:"Lo-fi vintage warmth",free:"vinyl crackle, tape hiss, mellow"}},
  {name:"🎻 Epik Sinematik", v:{genre:"Cinematic",sub:"Epic Orchestral",mood:"Epic",tempo:"Medium, 90-120 BPM",harmony:"Harmonic minor",lead:"Violin",acc:"String section",bass:"Deep smooth sub bass",perc:"Cinematic war drums",vt:"Choir",vs:"Full voice projection",vfx:"Church reverb",mix:"Balanced mixing",prod:"Layered and complex production",free:"swelling crescendos, heroic theme"}},
  {name:"💔 Akustik Balad", v:{genre:"Pop",sub:"Indie Pop",lang:"Turkish",mood:"Bittersweet",tempo:"Slow, 60-80 BPM",harmony:"Major",lead:"Acoustic guitar",acc:"Piano chords",bass:"Acoustic bass",perc:"Subtle percussion",vt:"Female vocal",vs:"Calm, melancholic, introspective",vtim:"Breathy",vfx:"Dry vocal, minimal reverb",rangeF:"Mezzo-soprano",mix:"Warm mixing",prod:"Close-mic intimate recording",free:"fingerpicked intro, intimate"}},
- {name:"🕺 Türk Pop Dans", v:{genre:"Pop",sub:"Dance Pop",fusion:"Middle Eastern",lang:"Turkish",turk:"Fantezi",mood:"Energetic",tempo:"Fast, 130-160 BPM",harmony:"Minor",lead:"Lead synth",acc:"Strumming electric guitar",bass:"Synth bass",perc:"Darbuka",vt:"Female vocal",vs:"Energetic, joyful, passionate",vtim:"Clear",vfx:"Short delay",rangeF:"Soprano",mix:"Bright mixing",prod:"Polished radio-ready mix",free:"catchy hook, darbuka groove"}}
+ {name:"🕺 Türk Pop Dans", v:{genre:"Pop",sub:"Dance Pop",fusion:"Middle Eastern",lang:"Turkish",turk:"Fantezi",mood:"Energetic",tempo:"Fast, 130-160 BPM",harmony:"Minor",lead:"Lead synth",acc:"Strumming electric guitar",bass:"Synth bass",perc:"Darbuka",vt:"Female vocal",vs:"Energetic, joyful, passionate",vtim:"Clear",vfx:"Short delay",rangeF:"Soprano",mix:"Bright mixing",prod:"Polished radio-ready mix",free:"catchy hook, darbuka groove"}},
+ {name:"🎤 Türk Pop (Energy)", v:{genre:"Pop",sub:"Dance Pop",tpSub:"Elektro Türk Pop",lang:"Turkish",turk:"Fantezi",mood:"Energetic",tempo:"Medium, 90-120 BPM",harmony:"Minor",lead:"Lead synth",acc:"Strumming acoustic guitar",bass:"Synth bass",perc:"Tight snare, sharp hi-hats",vt:"Female vocal",vs:"Belt technique with powerful projection",vtim:"Clear",vfx:"Plate reverb",rangeF:"Mezzo-soprano",mix:"Bright mixing",prod:"Polished radio-ready mix",fb:"Balanced fusion (50%)",adlib:"yeah, ooh",free:"bölüm bazlı enerji geçişleri (Verse Orta → Chorus Yüksek → Bridge Düşük)"}},
+ {name:"🎵 ASM Anatolian Sonic Mix", v:{genre:"Electronic",sub:"Downtempo",fusion:"Anatolian Rock",lang:"Turkish",turk:"Anadolu Rock",makam:"Hicaz",mood:"Mysterious",tempo:"Medium, 90-120 BPM",timesig:"9/8 aksak zeybek",harmony:"Modal (maqam-based)",lead:"Turkish psychedelic electric baglama",acc:"Synth strings",bass:"Synth bass",perc:"Bendir and riq",vt:"Instrumental, no vocals",mix:"Warm mixing",prod:"Atmospheric spacious production",syn:"Analog warm pads",mod:"Slow LFO sweep",fx:"Tape delay",ana:"Mikrotonal süslemeler",fb:"Heavy fusion (80% dominant)",free:"modular generative textures, anatolian articulation woven through synth layers"}},
+ {name:"🌀 Anatolian Psychedelic", v:{genre:"Rock",sub:"Psychedelic Rock",fusion:"Anatolian Rock",lang:"Turkish",turk:"Anadolu Rock",makam:"Hüseyni",mood:"Defiant",tempo:"Medium, 90-120 BPM",timesig:"7/8 aksak",harmony:"Modal (maqam-based)",lead:"Turkish psychedelic electric baglama",acc:"Distorted electric guitar",bass:"Electric bass guitar",perc:"Acoustic drums, open hi-hats, crashes",vt:"Male vocal",vs:"Chest voice with strong power",vtim:"Gravelly",vfx:"Plate reverb",rangeM:"Baritone",mix:"Warm mixing",prod:"Analog tape saturation",syn:"Vintage Moog bass",mod:"Tape wow and flutter",fx:"Spring reverb",ana:"Çarpma süsleme",fb:"Balanced fusion (50%)",free:"70s anatolian psychedelic rock production, fuzz baglama leads, swirling phaser"}},
+ {name:"🎪 Çocuk Şarkısı", v:{genre:"Folk",sub:"Acoustic Folk",lang:"Turkish",mood:"Happy",tempo:"Medium, 90-120 BPM",timesig:"4/4",harmony:"Major",lead:"Melodic accordion",acc:"Strumming acoustic guitar",bass:"Acoustic bass",perc:"Subtle percussion",vt:"Child vocal",vs:"Energetic, joyful, passionate",vtim:"Clear",vfx:"Short delay",mix:"Bright mixing",prod:"Clean modern studio production",kidsG:"Tekerleme",adlib:"la la la, hey, na na na",free:"clear simple words, repetitive chorus, friendly hand-claps, sing-along feel"}},
+ {name:"🎙️ Vokal Karakter", v:{vt:"Female vocal",vs:"Mixed voice with balanced resonance",vtim:"Warm and smoky",vfx:"Hall reverb",rangeF:"Mezzo-soprano",mix:"Warm mixing",free:"Vokal odaklı: zengin tını, kontrollü vibrato, samimi performans"}},
+ {name:"🎹 Temel (Hızlı)", v:{genre:"Pop",sub:"Indie Pop",lang:"English",mood:"Uplifting",tempo:"Medium, 90-120 BPM",harmony:"Major",lead:"Acoustic guitar",acc:"Piano chords",bass:"Acoustic bass",perc:"Subtle percussion",vt:"Female vocal",mix:"Balanced mixing",prod:"Clean modern studio production",free:"clean modern pop ready for radio"}}
 ];
 
 /* ====== HELPERS ====== */
@@ -365,12 +516,16 @@ const gT=$('gridTrack');
 mkSelect('genre','Müzik Türü (Genre)',D.genres,gT);
 mkSelect('sub','Alt Tür (Sub Genre)',[],gT);
 mkSelect('fusion','Füzyon (Fusion)',D.fusions,gT);
+mkSelect('fb','Füzyon Dengesi (Balance)',D.fusionBalance,gT);
 mkSelect('lang','Dil / Köken (Language)',D.languages,gT);
+mkSelect('tpSub','Türk Pop Alt Türü',D.turkPopSub,gT);
+mkSelect('kidsG','Çocuk Şarkı Türü',D.kidsGenre,gT);
 S.genre.addEventListener('change',()=>{fill(S.sub,D.subgenres[S.genre.value]||[]);build();});
 
 const gTu=$('gridTurkish');
 mkSelect('turk','Türk Müziği Stili',D.turkStyles,gTu);
 mkSelect('makam','Makam',D.makams,gTu);
+mkSelect('ana','Anatolian Articulation',D.anatolianArt,gTu);
 
 const gW=$('gridWorld');
 mkSelect('wreg','Bölge / Kıta',Object.keys(D.worldRegions),gW);
@@ -411,6 +566,11 @@ const gM=$('gridMix');
 mkSelect('mix','Mix Karakteri',D.mixChar,gM);
 mkSelect('prod','Prodüksiyon Stili',D.prodStyle,gM);
 
+const gSy=$('gridSynth');
+mkSelect('syn','Synthesis (Sentez)',D.synthesis,gSy);
+mkSelect('mod','Modulation (Modülasyon)',D.modulation,gSy);
+mkSelect('fx','Effects (Efekt)',D.effects,gSy);
+
 const gS=$('gridStruct');
 mkSelect('structure','Şarkı Yapısı',D.structures,gS);
 mkSelect('energy','Enerji Eğrisi',D.energy,gS);
@@ -420,6 +580,15 @@ D.sections.forEach(sec=>{
   const b=document.createElement('button');b.className='btn small';b.textContent=sec;
   b.onclick=()=>insertSection(sec);$('secBtns').appendChild(b);
 });
+let currentEnergy='';
+document.querySelectorAll('#energyToggle .qb').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('#energyToggle .qb').forEach(x=>x.style.borderColor='');
+    b.style.borderColor='var(--amber)';
+    currentEnergy=b.dataset.e||'';
+  };
+});
+document.querySelector('#energyToggle .qb').style.borderColor='var(--amber)'; // ilk seçili
 function insertSection(sec){
   const ta=$('lyrics');let tag=sec;
   if(['Verse','Chorus'].includes(sec)){
@@ -427,7 +596,8 @@ function insertSection(sec){
     if(sec==='Chorus'&&!ta.value.includes('[Chorus 1]')&&ta.value.includes('[Chorus]'))tag='Chorus';
     else tag=`${sec} ${n}`;
   }
-  const ins=(ta.value&&!ta.value.endsWith('\n\n')?(ta.value.endsWith('\n')?'\n':'\n\n'):'')+`[${tag}]\n`;
+  const energySuffix=currentEnergy?` (Energy: ${currentEnergy})`:'';
+  const ins=(ta.value&&!ta.value.endsWith('\n\n')?(ta.value.endsWith('\n')?'\n':'\n\n'):'')+`[${tag}]${energySuffix}\n`;
   ta.value+=ins;ta.focus();onLyrics();
 }
 
@@ -467,8 +637,16 @@ let format='classic',manualEdit=false,undoStack=[];
 function parts(){
   const p={};
   p.genre=[val('genre'),val('sub')].filter(Boolean).join(', ');
-  if(val('fusion')&&val('fusion')!==val('genre'))p.genre+=(p.genre?' fused with ':'')+val('fusion');
-  if(val('turk')){const t=D.turkStyles.find(x=>x[0]===val('turk'));p.turk=t?t[1]:val('turk');}
+  if(val('tpSub'))p.genre+=(p.genre?' ':'')+`(${val('tpSub')} subtype)`;
+  if(val('kidsG'))p.genre+=(p.genre?', ':'')+`children's ${val('kidsG').toLowerCase()} style`;
+  if(val('fusion')&&val('fusion')!==val('genre')){
+    const fbTxt=val('fb')?` (${val('fb').toLowerCase()})`:'';
+    p.genre+=(p.genre?' fused with ':'')+val('fusion')+fbTxt;
+  }
+  if(val('turk')){
+    const t=D.turkStyles.find(x=>x[0]===val('turk'));p.turk=t?t[1]:val('turk');
+    if(val('ana'))p.turk+=', with '+val('ana').toLowerCase();
+  }
   if(val('makam'))p.makam=`in ${val('makam')} makam with microtonal ornaments`;
   if(val('lang'))p.lang=`${val('lang')} lyrics`;
   const w=[];
@@ -491,7 +669,11 @@ function parts(){
   if(val('vtim'))v.push(val('vtim').toLowerCase()+' timbre');
   if(val('vfx'))v.push(val('vfx').toLowerCase());
   if(v.length)p.vocal=v.join(', ');
-  p.mixp=[val('mix'),val('prod')].filter(Boolean).join(', ').toLowerCase();
+  const mixParts=[val('mix'),val('prod')].filter(Boolean);
+  const synParts=[val('syn'),val('mod'),val('fx')].filter(Boolean);
+  if(synParts.length)mixParts.push('synthesis '+synParts.map(x=>x.toLowerCase()).join(' / '));
+  p.mixp=mixParts.join(', ').toLowerCase();
+  if(val('adlib'))p.adlib='ad-libs: '+val('adlib');
   // structure
   const secs=Object.keys(secState);
   if(secs.length&&secs.some(s=>secState[s].voc||secState[s].play)){
@@ -509,7 +691,7 @@ function build(){
   if(manualEdit)return;
   const p=parts();let out='';
   if(format==='classic'){
-    out=[p.genre,p.turk,p.world,p.makam,p.lang,p.info,p.inst,p.vocal,p.mixp,p.structure&&'structure: '+p.structure,p.free]
+    out=[p.genre,p.turk,p.world,p.makam,p.lang,p.info,p.inst,p.vocal,p.mixp,p.structure&&'structure: '+p.structure,p.adlib,p.free]
       .filter(Boolean).join('. ');
     if(out)out+='.';
   } else if(format==='tag'){
@@ -524,6 +706,7 @@ function build(){
     if(p.vocal)t.push(`[vocals: ${p.vocal}]`);
     if(p.mixp)t.push(`[production: ${p.mixp}]`);
     if(p.structure)t.push(`[structure: ${p.structure}]`);
+    if(p.adlib)t.push(`[${p.adlib}]`);
     if(p.free)t.push(`[notes: ${p.free}]`);
     out=t.join(' ');
   } else { // lyrics format
@@ -533,7 +716,7 @@ function build(){
       const extra=[st.voc,st.play&&val('lead')?val('lead').toLowerCase()+' '+st.play:st.play].filter(Boolean).join(', ');
       return extra?`[${sec.trim()}: ${extra}]`:m;
     });
-    const head=[p.genre,p.turk,p.info,p.inst,p.vocal,p.mixp].filter(Boolean).join('. ');
+    const head=[p.genre,p.turk,p.info,p.inst,p.vocal,p.mixp,p.adlib].filter(Boolean).join('. ');
     out=(head?head+'.\n\n':'')+ly;
   }
   setOutput(out);
@@ -597,9 +780,10 @@ $('btnHistory').onclick=()=>{
 };
 $('btnClear').onclick=()=>{
   document.querySelectorAll('select').forEach(s=>s.value='');
-  $('lyrics').value='';$('exclude').value='';$('freeText').value='';
+  $('lyrics').value='';$('exclude').value='';$('freeText').value='';$('adlib').value='';
   secState={};$('perSection').innerHTML='';
   document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  document.querySelectorAll('#adlibChips .ali').forEach(c=>c.classList.remove('on'));
   manualEdit=false;undoStack=[];$('btnUndo').hidden=true;build();
 };
 $('exclude').addEventListener('input',()=>{});
@@ -619,9 +803,16 @@ function applyPreset(p,chipEl){
   for(const k in v){
     if(k==='exclude'){$('exclude').value=v[k];continue;}
     if(k==='free'){$('freeText').value=v[k];continue;}
+    if(k==='adlib'){$('adlib').value=v[k];syncAdlibChips();continue;}
     if(S[k])S[k].value=v[k];
   }
   build();toast(p.name+' yüklendi');
+}
+function syncAdlibChips(){
+  const cur=$('adlib').value.split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+  document.querySelectorAll('#adlibChips .ali').forEach(el=>{
+    el.classList.toggle('on',cur.includes(el.dataset.a.toLowerCase()));
+  });
 }
 
 /* ====== RANDOM ====== */
@@ -637,6 +828,10 @@ $('btnRandom').onclick=()=>{
   S.vs.value=pick(D.vocalStyles);S.vtim.value=pick(D.vocalTimbres);S.vfx.value=pick(D.vocalFx);
   S.mix.value=pick(D.mixChar);S.prod.value=pick(D.prodStyle);
   S.structure.value=pick(D.structures);S.energy.value=pick(D.energy);
+  if(Math.random()>.6)S.timesig.value=pick(D.timesigs);
+  if(Math.random()>.55)S.ana.value=pick(D.anatolianArt);
+  if(Math.random()>.6&&S.fusion.value)S.fb.value=pick(D.fusionBalance);
+  if(Math.random()>.7){S.syn.value=pick(D.synthesis);S.mod.value=pick(D.modulation);S.fx.value=pick(D.effects);}
   build();toast('Rastgele kombinasyon üretildi 🎲');
 };
 
@@ -695,6 +890,44 @@ $('consoleToggle').onclick=()=>{
   document.querySelector('.console').classList.toggle('min');
   document.body.classList.toggle('console-min');
 };
+/* ====== AD-LIBS CHIPS ====== */
+D.adlibs.forEach(a=>{
+  const c=document.createElement('button');c.type='button';c.className='ali';c.dataset.a=a;c.textContent=a;
+  c.onclick=()=>{
+    const cur=$('adlib').value.split(',').map(s=>s.trim()).filter(Boolean);
+    const i=cur.findIndex(x=>x.toLowerCase()===a.toLowerCase());
+    if(i>=0)cur.splice(i,1); else cur.push(a);
+    $('adlib').value=cur.join(', ');
+    syncAdlibChips();build();
+  };
+  $('adlibChips').appendChild(c);
+});
+$('adlib').addEventListener('input',debounce(()=>{syncAdlibChips();build();},250));
+
+/* ====== HUB CARDS ====== */
+document.querySelectorAll('.hub-card').forEach(c=>{
+  c.onclick=()=>{
+    const name=c.dataset.preset;
+    if(name==='__ADVANCED__'){
+      $('cardLyrics').scrollIntoView({behavior:'smooth',block:'start'});
+      toast('Gelişmiş mod — tüm form açık');
+      return;
+    }
+    const p=PRESETS.find(x=>x.name===name);
+    if(!p){toast('Preset bulunamadı: '+name);return;}
+    applyPreset(p,null);
+    setTimeout(()=>$('cardLyrics').scrollIntoView({behavior:'smooth',block:'start'}),120);
+  };
+});
+$('hubToggle').onclick=()=>{
+  const h=$('hub');
+  h.classList.toggle('collapsed');
+  $('hubToggle').textContent=h.classList.contains('collapsed')?'▸ Hızlı başlangıç kartlarını göster':'▾ Hızlı başlangıç kartlarını gizle';
+};
+
+/* ====== HELP ====== */
+$('btnHelp').onclick=()=>$('dlgHelp').showModal();
+
 /* PWA service worker */
 if('serviceWorker' in navigator && location.protocol==='https:')
   navigator.serviceWorker.register('sw.js').catch(()=>{});
