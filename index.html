@@ -666,7 +666,7 @@ $('fileImport').onchange=e=>{
 };
 
 /* ====== AI ENHANCE ====== */
-const AI_ENDPOINT='https://DEGISTIR.workers.dev/enhance'; // <-- Cloudflare Worker adresinizi yazin
+const AI_ENDPOINT='https://sunoforge-ai.ademtanas.workers.dev/enhance';
 if(AI_ENDPOINT.includes('DEGISTIR')){$('btnAI').hidden=true;}
 $('btnAI').onclick=()=>{$('aiOut').hidden=true;$('btnAIUse').hidden=true;dlgAI.showModal();};
 $('btnAIRun').onclick=async()=>{
