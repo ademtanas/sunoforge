@@ -1,0 +1,18 @@
+{
+  "hosting": {
+    "site": "tanasmusic",
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      ".firebaserc",
+      ".firebase/**",
+      ".git/**",
+      "worker.js",
+      "wrangler.toml",
+      "wrangler.jsonc",
+      "README.md",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  }
+}
