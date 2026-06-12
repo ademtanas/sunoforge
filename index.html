@@ -1054,6 +1054,25 @@ function detectClipScenes(){
   return out;
 }
 
+const THEME_EN={
+  "Aşk / romantik":"a pair of lovers in a tender romantic moment",
+  "Ayrılık / kalp kırıklığı":"a heartbroken character lingering after a breakup",
+  "Şehir gecesi":"a lone figure walking a glowing night city",
+  "Yolculuk / road trip":"a young traveler on an open-road journey",
+  "Nostalji / anı":"a wistful character drifting through old memories",
+  "Protesto / öfke":"a defiant figure amid a protest crowd",
+  "Parti / kutlama":"vibrant partygoers celebrating in a packed venue",
+  "Yalnızlık":"a solitary figure dwarfed by empty space",
+  "Macera / kaçış":"an adventurer on the run through dramatic terrain",
+  "Kıyamet sonrası":"a post-apocalyptic survivor in ruined landscapes",
+  "Rüya / gerçeküstü":"a dreamlike figure floating in surreal space",
+  "Dijital dünya / siber":"a cyberpunk avatar inside a digital realm",
+  "Sokak yaşamı":"a street character amid urban backdrop",
+  "Doğa / orman":"a wanderer surrounded by deep forest and nature",
+  "Çocukluk anıları":"a child in a sun-bleached memory of childhood",
+  "Geleceğe yolculuk":"a futurist traveler in a sleek tomorrow"
+};
+function enOf(s){if(!s)return '';const m=s.match(/\(([^)]+)\)/);return (m?m[1]:s).trim();}
 function clipCtx(){
   return {
     genre:val('clipGenre'),mood:val('clipMood'),theme:val('clipTheme'),
@@ -1062,22 +1081,22 @@ function clipCtx(){
   };
 }
 function buildScenePrompt(scene,ctx){
-  const subj=ctx.theme?ctx.theme.toLowerCase().split('/')[0].trim():'a singer/character';
-  const action=scene.body?scene.body.replace(/\s+/g,' ').slice(0,140):'performing the song';
-  const camera=ctx.camera||'cinematic medium shot';
-  const light=ctx.light||'natural daylight';
-  const palette=ctx.palette?ctx.palette+' palette':'rich cinematic palette';
-  const style=ctx.style?ctx.style+' aesthetic':'cinematic music video aesthetic';
+  const subj=THEME_EN[ctx.theme]||(ctx.theme?ctx.theme.split('/')[0].trim():'a singer/character');
+  const action=scene.body?'reacting to the lyrical mood — '+scene.body.replace(/\s+/g,' ').slice(0,120):'performing emotionally to camera';
+  const camera=enOf(ctx.camera)||'cinematic medium shot';
+  const light=enOf(ctx.light)||'natural daylight';
+  const palette=ctx.palette?enOf(ctx.palette)+' palette':'rich cinematic palette';
+  const style=ctx.style?enOf(ctx.style)+' aesthetic':'cinematic music video aesthetic';
   const mood=ctx.mood?ctx.mood.toLowerCase()+' mood':'';
-  const genre=ctx.genre?ctx.genre.toLowerCase()+' vibe':'';
+  const genre=ctx.genre?ctx.genre.toLowerCase()+' music video':'music video';
   const parts=[
-    `Subject: ${subj} in a ${genre||'music-video'} scene, ${mood}`.replace(/, $/,''),
+    `Subject: ${subj}, set in a ${genre} scene${mood?', '+mood:''}`,
     `Action: ${action}`,
     `Camera: ${camera}`,
     `Lighting: ${light}`,
     `Palette: ${palette}`,
     `Style: ${style}`
-  ].filter(x=>!/:\s*$/.test(x));
+  ];
   return parts.join('. ')+'.';
 }
 
