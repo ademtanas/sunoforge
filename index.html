@@ -180,6 +180,7 @@ footer{margin-top:30px;color:var(--dim);font-size:12px;text-align:center}
     </div>
     <div class="toolbar">
       <button class="btn small" id="btnRandom">🎲 Şanslıyım</button>
+      <button class="btn small" id="btnAIFill">📝 AI ile Form Doldur</button>
       <button class="btn small" id="btnHistory">🕘 Geçmiş</button>
       <button class="btn small" id="btnHelp">❓ Yardım</button>
       <button class="btn small" id="btnExport">⬇ Ayarları Dışa Aktar</button>
@@ -1003,6 +1004,78 @@ $('hubToggle').onclick=()=>{
 
 /* ====== HELP ====== */
 $('btnHelp').onclick=()=>$('dlgHelp').showModal();
+
+/* ====== AI FORM FILL ====== */
+function bestMatch(needle,hay){
+  if(!needle||!hay.length)return null;
+  let hit=hay.find(x=>x===needle);if(hit)return hit;
+  const n=String(needle).toLowerCase().trim();
+  hit=hay.find(x=>x.toLowerCase().trim()===n);if(hit)return hit;
+  hit=hay.find(x=>x.toLowerCase().includes(n)||n.includes(x.toLowerCase()));
+  return hit||null;
+}
+const FILL_FIELDS=['genre','sub','fusion','lang','turk','makam','tempo','timesig','mood','harmony','lead','acc','bass','perc','vt','vs','vtim','vfx','rangeF','rangeM','mix','prod','structure','energy','tpSub','fb','ana','syn','mod','fx','kidsG'];
+$('btnAIFill').onclick=async()=>{
+  const filled={},empty=[];
+  FILL_FIELDS.forEach(id=>{
+    if(!S[id])return;
+    if(S[id].value)filled[id]=S[id].value;else empty.push(id);
+  });
+  if(!empty.length){toast('Tüm alanlar zaten dolu');return;}
+  const btn=$('btnAIFill');btn.disabled=true;const orig=btn.textContent;btn.textContent='Dolduruluyor…';
+  const opts={
+    genres:D.genres,subgenres:D.subgenres,fusions:D.fusions,languages:D.languages,
+    turkStyles:D.turkStyles.map(t=>t[0]),makams:D.makams,
+    tempos:D.tempos.map(t=>t[0]),timesigs:D.timesigs,moods:D.moods,harmony:D.harmony,
+    leads:D.leads,accomp:D.accomp,bass:D.bass,perc:D.perc,
+    vocalTypes:D.vocalTypes.map(v=>v[0]),vocalStyles:D.vocalStyles,vocalTimbres:D.vocalTimbres,vocalFx:D.vocalFx,
+    rangesF:D.rangesF,rangesM:D.rangesM,mixChar:D.mixChar,prodStyle:D.prodStyle,
+    structures:D.structures,energy:D.energy,
+    turkPopSub:D.turkPopSub,fusionBalance:D.fusionBalance,anatolianArt:D.anatolianArt,
+    synthesis:D.synthesis,modulation:D.modulation,effects:D.effects,kidsGenre:D.kidsGenre
+  };
+  const fieldMap={
+    genre:'genres',sub:'subgenres[<genre>]',fusion:'fusions',lang:'languages',
+    turk:'turkStyles',makam:'makams',tempo:'tempos',timesig:'timesigs',
+    mood:'moods',harmony:'harmony',lead:'leads',acc:'accomp',bass:'bass',perc:'perc',
+    vt:'vocalTypes',vs:'vocalStyles',vtim:'vocalTimbres',vfx:'vocalFx',
+    rangeF:'rangesF',rangeM:'rangesM',mix:'mixChar',prod:'prodStyle',
+    structure:'structures',energy:'energy',
+    tpSub:'turkPopSub',fb:'fusionBalance',ana:'anatolianArt',
+    syn:'synthesis',mod:'modulation',fx:'effects',kidsG:'kidsGenre'
+  };
+  const sys=`You are an expert Suno music prompt assistant. The user has partially filled a music prompt form. Pick coherent values for the EMPTY fields ONLY using STRICTLY values from the provided options. Output STRICT JSON only: {"selections":{"<fieldId>":"<exact verbatim string from option list>"}}. Rules: (1) Each value MUST be exactly verbatim from the corresponding option list (case-sensitive). Never invent. (2) Skip any field where no good musical fit exists. (3) Combination must be musically coherent and respect the user's existing choices. (4) Only fill rangeF when vocal type is female-leaning; only fill rangeM when male-leaning; skip both if instrumental. (5) Only fill tpSub when Turkish Pop context. (6) Only fill kidsG when child vocal context. (7) Only fill makam/turk/ana when Turkish/Anatolian context. (8) Only fill syn/mod/fx when electronic/synthwave/ASM context. (9) Genre subgenre (sub) must be from subgenres[<genre>] keyed by chosen genre. (10) Always pick 8-15 fields if possible to give a complete musical picture.`;
+  const userMsg=`Currently filled by user:\n${JSON.stringify(filled,null,2)}\n\nEmpty fields to consider filling (pick exact values where appropriate):\n${empty.join(', ')}\n\nfieldMap (field → list inside availableOptions):\n${JSON.stringify(fieldMap)}\n\navailableOptions:\n${JSON.stringify(opts)}\n\nReturn JSON only.`;
+  try{
+    const r=await fetch(AI_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({provider:'gemini',system:sys,prompt:userMsg})});
+    if(r.status===429)throw new Error('Günlük AI hakkı doldu');
+    if(!r.ok)throw new Error('sunucu hatası ('+r.status+')');
+    const data=await r.json();
+    let txt=(data.text||'').trim().replace(/^```(?:json)?\s*/i,'').replace(/```\s*$/,'').trim();
+    let parsed;try{parsed=JSON.parse(txt);}catch(e){
+      const m=txt.match(/\{[\s\S]*\}/);if(!m)throw new Error('AI JSON döndürmedi');
+      parsed=JSON.parse(m[0]);
+    }
+    const sels=parsed.selections||parsed;
+    let count=0;
+    if(sels.genre&&S.genre&&!S.genre.value){
+      const list=D.genres;const m=bestMatch(sels.genre,list);
+      if(m){S.genre.value=m;fill(S.sub,D.subgenres[m]||[]);count++;}
+    }
+    for(const id in sels){
+      if(id==='genre')continue;
+      if(!S[id])continue;
+      if(S[id].value)continue;
+      const list=[...S[id].options].slice(1).map(o=>o.value);
+      const m=bestMatch(sels[id],list);
+      if(m){S[id].value=m;count++;}
+    }
+    build();
+    toast(count+' alan AI ile dolduruldu ✨');
+  }catch(err){toast('AI fill: '+err.message);}
+  btn.disabled=false;btn.textContent=orig;
+};
 
 /* ====== CLIP MODE ====== */
 let currentMode='song';
