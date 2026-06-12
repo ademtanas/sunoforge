@@ -1153,7 +1153,7 @@ $('btnAIFill').onclick=async()=>{
   // Send only the lists for empty fields, keep payload small
   const optsForEmpty={};
   empty.forEach(id=>{optsForEmpty[id]=listForField(id);});
-  const sys=`Suno music prompt assistant. User has partial form. Fill ONLY empty fields, picking exact verbatim strings from the per-field options. Output STRICT JSON: {"selections":{"<id>":"<exact string>"}}. Rules: pick musically coherent values matching the user's existing choices; skip a field if no good fit; only fill rangeF for female vocal context, rangeM for male; skip Turkish-only fields (turk/makam/ana/tpSub) unless Turkish context; skip syn/mod/fx unless electronic-leaning; skip kidsG unless child vocal. Aim 8-15 picks.`;
+  const sys=`Suno music prompt assistant. User has partial form. Fill ONLY empty fields, picking exact verbatim strings from the per-field options. ALWAYS output STRICT valid JSON object only — no prose, no markdown — exactly: {"selections":{"<id>":"<exact string>"}}. If a field has no good fit, simply omit it from selections. NEVER refuse, NEVER apologize, NEVER explain. Rules: pick musically coherent values matching the user's existing choices; only fill rangeF for female vocal context, rangeM for male; skip Turkish-only fields (turk/makam/ana/tpSub) unless Turkish context; skip syn/mod/fx unless electronic-leaning; skip kidsG unless child vocal. Aim 8-15 picks. Begin output immediately with '{'.`;
   const userMsg=`Filled by user:\n${JSON.stringify(filled)}\n\nEmpty fields (with their option lists):\n${JSON.stringify(optsForEmpty)}\n\nReturn JSON only.`;
   try{
     const r=await fetch(AI_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},
