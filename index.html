@@ -905,18 +905,29 @@ D.adlibs.forEach(a=>{
 $('adlib').addEventListener('input',debounce(()=>{syncAdlibChips();build();},250));
 
 /* ====== HUB CARDS ====== */
+function scrollToForm(){
+  const el=$('cardLyrics');
+  if(el&&typeof el.scrollIntoView==='function')el.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function freshForm(){
+  document.querySelectorAll('.wrap select').forEach(s=>s.value='');
+  $('exclude').value='';$('freeText').value='';$('adlib').value='';
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  document.querySelectorAll('#adlibChips .ali').forEach(c=>c.classList.remove('on'));
+}
 document.querySelectorAll('.hub-card').forEach(c=>{
   c.onclick=()=>{
     const name=c.dataset.preset;
     if(name==='__ADVANCED__'){
-      $('cardLyrics').scrollIntoView({behavior:'smooth',block:'start'});
+      scrollToForm();
       toast('Gelişmiş mod — tüm form açık');
       return;
     }
     const p=PRESETS.find(x=>x.name===name);
     if(!p){toast('Preset bulunamadı: '+name);return;}
+    freshForm();
     applyPreset(p,null);
-    setTimeout(()=>$('cardLyrics').scrollIntoView({behavior:'smooth',block:'start'}),120);
+    setTimeout(scrollToForm,120);
   };
 });
 $('hubToggle').onclick=()=>{
