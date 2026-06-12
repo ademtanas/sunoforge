@@ -6,7 +6,7 @@
 // Opsiyonel KV binding: RATELIMIT
 
 const DAILY_LIMIT = 20;
-const ALLOWED_ORIGINS = ["https://ademtanas.github.io"];
+const ALLOWED_ORIGINS = ["https://ademtanas.github.io", "https://sunoforge.pages.dev"];
 const MODELS = {
   gemini: "gemini-2.5-flash",
   claude: "claude-sonnet-4-20250514",
