@@ -54,7 +54,7 @@ export default {
             body: JSON.stringify({
               systemInstruction: { parts: [{ text: system }] },
               contents: [{ role: "user", parts: [{ text: prompt }] }],
-              generationConfig: { maxOutputTokens: 600 },
+              generationConfig: { maxOutputTokens: 2000 },
             }) });
         if (!r.ok) throw new Error("gemini " + r.status);
         const d = await r.json();
@@ -64,7 +64,7 @@ export default {
         const r = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
-          body: JSON.stringify({ model: MODELS.claude, max_tokens: 600, system,
+          body: JSON.stringify({ model: MODELS.claude, max_tokens: 2000, system,
             messages: [{ role: "user", content: prompt }] }) });
         if (!r.ok) throw new Error("claude " + r.status);
         const d = await r.json();
@@ -74,7 +74,7 @@ export default {
         const r = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": "Bearer " + env.OPENAI_API_KEY },
-          body: JSON.stringify({ model: MODELS.gpt, max_tokens: 600,
+          body: JSON.stringify({ model: MODELS.gpt, max_tokens: 2000,
             messages: [{ role: "system", content: system }, { role: "user", content: prompt }] }) });
         if (!r.ok) throw new Error("gpt " + r.status);
         const d = await r.json();
