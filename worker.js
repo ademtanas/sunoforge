@@ -150,7 +150,7 @@ export default {
 
     if (req.method !== "POST") return new Response("Not found", { status: 404, headers: cors });
 
-    // POST /analyze — audio multimodal
+    // POST /analyze — audio multimodal (file or YouTube URL)
     if (pathname.endsWith("/analyze")) {
       const rate = await checkRate(env, ip, "analyze");
       if (!rate.allowed) return json({ error: "Günlük analiz hakkınız doldu (15/gün). Yarın tekrar deneyin." }, 429);
@@ -158,14 +158,20 @@ export default {
       let body;
       try { body = await req.json(); } catch { return json({ error: "bad json" }, 400); }
       const audio = body.audio;
+      const youtubeUrl = (body.youtubeUrl || "").trim();
       const mime = body.mime || "audio/mpeg";
-      if (!audio) return json({ error: "audio gerekli (base64 string)" }, 400);
-      if (audio.length > MAX_AUDIO_BASE64) return json({ error: "Dosya 20MB'ı aşıyor" }, 413);
+
+      if (!audio && !youtubeUrl) return json({ error: "audio (base64) veya youtubeUrl gerekli" }, 400);
+      if (audio && audio.length > MAX_AUDIO_BASE64) return json({ error: "Dosya 20MB'ı aşıyor" }, 413);
+      if (youtubeUrl && !/^https?:\/\/(www\.)?(youtube\.com\/watch\?|youtu\.be\/)/i.test(youtubeUrl)) {
+        return json({ error: "Geçersiz YouTube linki" }, 400);
+      }
       if (!env.GEMINI_API_KEY) return json({ error: "not configured" }, 501);
 
-      const sha = body.sha256;
-      if (sha && env.MEDIA_CACHE) {
-        const cached = await env.MEDIA_CACHE.get(`an:${sha}`);
+      // cache key: sha for file, normalized YT URL for link
+      const cacheKey = body.sha256 || (youtubeUrl ? "yt:" + youtubeUrl.replace(/[^\w:./?=&-]/g, "") : null);
+      if (cacheKey && env.MEDIA_CACHE) {
+        const cached = await env.MEDIA_CACHE.get(`an:${cacheKey}`);
         if (cached) {
           try {
             const obj = JSON.parse(cached);
@@ -174,13 +180,16 @@ export default {
         }
       }
 
-      const system = `You are a senior music producer and ethnomusicologist. ${TURKISH_EXPERTISE}\n\n${NO_CLICHE_RULE}\n\nAnalyze the audio. Return ONLY valid JSON matching the schema. NO prose, NO markdown. Every string MUST be a valid JSON string — escape any inner quotes as \\". Never include literal newlines inside string values.`;
+      const system = `You are a senior music producer and ethnomusicologist. ${TURKISH_EXPERTISE}\n\n${NO_CLICHE_RULE}\n\nAnalyze the audio/video. Return ONLY valid JSON matching the schema. NO prose, NO markdown. Every string MUST be a valid JSON string — escape any inner quotes as \\". Never include literal newlines inside string values.`;
       try {
+        const mediaPart = youtubeUrl
+          ? { fileData: { fileUri: youtubeUrl, mimeType: "video/*" } }
+          : { inlineData: { mimeType: mime, data: audio } };
         const text = await callGemini(
           env, GEMINI_FLASH, system,
           [
-            { text: `Analyze this track. Return ONLY JSON with this schema:\n${ANALYSIS_SCHEMA}\n\nIMPORTANT: Keep structure array to at most 8 sections. Keep all string fields concise.` },
-            { inlineData: { mimeType: mime, data: audio } }
+            { text: `Analyze this track${youtubeUrl ? ' (YouTube video — focus on the music, not visuals)' : ''}. Return ONLY JSON with this schema:\n${ANALYSIS_SCHEMA}\n\nIMPORTANT: Keep structure array to at most 8 sections. Keep all string fields concise.` },
+            mediaPart
           ],
           8000, true
         );
@@ -191,8 +200,8 @@ export default {
           console.error("raw last 500:", String(text).slice(-500));
           throw new Error("AI cevabı parse edilemedi (büyük ihtimal Gemini cevabı kesildi veya bozuk karakter içeriyor). Tekrar deneyin veya daha kısa bir parça yükleyin.");
         }
-        if (sha && env.MEDIA_CACHE) {
-          await env.MEDIA_CACHE.put(`an:${sha}`, JSON.stringify(dna), { expirationTtl: 60 * 60 * 24 * 30 });
+        if (cacheKey && env.MEDIA_CACHE) {
+          await env.MEDIA_CACHE.put(`an:${cacheKey}`, JSON.stringify(dna), { expirationTtl: 60 * 60 * 24 * 30 });
         }
         await rate.increment();
         return json({ ...dna, cached: false });
@@ -243,7 +252,24 @@ export default {
       if (!theme) return json({ error: "Tema gerekli (örn. 'yağmurlu gecede ayrılık')" }, 400);
       if (!env.GEMINI_API_KEY) return json({ error: "not configured" }, 501);
 
-      const system = `You are a professional Turkish songwriter with deep cultural fluency (Arabesk, Anadolu Rock, Türk Pop, modern indie, Tasavvuf). Write song lyrics matching the given context. Use Suno's [Section] tag format ([Intro], [Verse 1], [Pre-Chorus], [Chorus], [Bridge], [Outro] etc). Default language is Turkish unless explicitly otherwise. Match the mood and genre. Use clear Turkish pronunciation (avoid hard consonant clusters). Include a memorable hook in the chorus. Output ONLY the lyrics text, NO explanation, NO markdown — start with the first [Section] tag.`;
+      const system = `You are a professional Turkish songwriter with deep cultural fluency (Arabesk, Anadolu Rock, Türk Pop, modern indie, Tasavvuf). Write FULL, COMPLETE song lyrics — never fragments or summaries. Use Suno's [Section] tag format ([Intro], [Verse 1], [Pre-Chorus], [Chorus], [Bridge], [Outro] etc). Default language is Turkish unless explicitly otherwise. Match the mood and genre. Use clear Turkish pronunciation (avoid hard consonant clusters).
+
+LENGTH RULES (strict):
+- Each Verse: 6-8 lines, vivid imagery, story progression
+- Each Chorus: 4-6 lines, poetic, memorable, the same Chorus repeats identically (do NOT vary)
+- Pre-Chorus: 2-4 lines, builds tension into Chorus
+- Bridge: 4-6 lines, fresh perspective or emotional release
+- Intro/Outro: optional 2-4 lines or instrumental cue
+
+CONTENT RULES:
+- Verse 1 sets the scene and characters
+- Verse 2 deepens the emotion or moves the story forward
+- Chorus carries the hook and main feeling
+- Bridge introduces contrast or release
+- Use concrete sensory details (rain, scent, light, touch) — never vague abstractions
+- Rhyme naturally; do not force end-rhymes if they sound awkward
+
+Output ONLY the lyrics text, NO explanation, NO markdown — start with the first [Section] tag.`;
 
       const userMsg =
         `Theme: ${theme.slice(0, 400)}\n` +
@@ -255,7 +281,7 @@ export default {
         `Write the song lyrics now. Start with the first [Section] tag.`;
 
       try {
-        const text = await callGemini(env, GEMINI_FLASH, system, [{ text: userMsg }], 2000, false);
+        const text = await callGemini(env, GEMINI_FLASH, system, [{ text: userMsg }], 3500, false);
         const lyrics = String(text || "").replace(/^```[a-z]*\s*/i, "").replace(/```\s*$/, "").trim();
         await rate.increment();
         return json({ lyrics });
