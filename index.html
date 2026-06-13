@@ -1532,17 +1532,71 @@ function renderAnalyze(p,up){
       ${p.hook&&p.hook.description?`<div class="note"><b style="color:var(--amber2)">🪝 Hook:</b> ${p.hook.description}${p.hook.location?' <i style="color:var(--dim)">('+p.hook.location+')</i>':''}</div>`:''}
       ${struct?`<div class="subhead">🧱 Bölüm Haritası</div><div class="struct-list">${struct}</div>`:''}
       ${remix?`<div class="subhead">🔀 Remix Fikirleri</div><div class="remix-list">${remix}</div>`:''}
-      <div class="subhead">🎯 Hazır Suno Prompt</div>
+
+      <div class="subhead">🎯 Suno Style Prompt</div>
       <textarea readonly id="anaSunoPrompt" style="min-height:90px;background:var(--bg)">${(p.suno_prompt||'').replace(/</g,'&lt;')}</textarea>
       ${p.user_note?`<div class="note" style="margin-top:8px"><b style="color:var(--amber2)">📝 Not:</b> ${p.user_note}</div>`:''}
-      <div class="secbtns" style="margin-top:10px">
+
+      <div class="subhead">🎼 Suno için Şarkı Sözleri</div>
+      <div class="secbtns">
+        <button class="btn primary" id="btnAnaLyrics" type="button">🪶 Söz Üret (Verse + Chorus + Bridge)</button>
+        <span id="anaLyHint" class="note" style="font-size:12px;margin:0">Analizdeki tarz ve duyguya uygun Türkçe söz üretir</span>
+      </div>
+      <div id="anaLyricsBox" hidden style="margin-top:10px">
+        <textarea id="anaLyricsOut" readonly style="min-height:200px;background:var(--bg)"></textarea>
+        <div class="secbtns" style="margin-top:8px">
+          <button class="btn" id="btnAnaLyricsCopy" type="button">📋 Sözleri Kopyala</button>
+          <button class="btn" id="btnAnaLyricsSend" type="button">📥 Söz Editörüne Aktar</button>
+        </div>
+      </div>
+
+      <div class="subhead">📦 Tam Paket</div>
+      <div class="secbtns">
         <button class="btn primary" id="btnApplyAnalyze" type="button">📥 Forma Uygula (Şarkı moduna geç)</button>
-        <button class="btn" id="btnCopySunoPrompt" type="button">📋 Suno Prompt Kopyala</button>
+        <button class="btn" id="btnCopySunoPrompt" type="button">📋 Style Kopyala</button>
+        <button class="btn" id="btnAnaCombined" type="button">🎯 Style + Lyrics Birlikte Kopyala</button>
       </div>
     </div>
   `;
   $('btnApplyAnalyze').onclick=()=>applyAnalysisToForm(p);
-  $('btnCopySunoPrompt').onclick=()=>{navigator.clipboard.writeText(p.suno_prompt||'');toast('Suno prompt kopyalandı');};
+  $('btnCopySunoPrompt').onclick=()=>{navigator.clipboard.writeText(p.suno_prompt||'');toast('Style kopyalandı');};
+  $('btnAnaCombined').onclick=()=>{
+    const ly=$('anaLyricsOut')?$('anaLyricsOut').value:'';
+    if(!ly){toast('Önce sözleri üret');return;}
+    const combined=`[Style]\n${p.suno_prompt||''}\n\n[Lyrics]\n${ly}`;
+    navigator.clipboard.writeText(combined);
+    toast('Style + Lyrics tek kopyalandı');
+  };
+  $('btnAnaLyrics').onclick=async()=>{
+    const btn=$('btnAnaLyrics');btn.disabled=true;const orig=btn.textContent;btn.textContent='Söz üretiliyor (~8 sn)…';
+    try{
+      const themeBits=[p.user_note,p.mood,p.genre,p.sub_genre].filter(Boolean).join(' — ');
+      const data=await apiFetch('/lyrics',{
+        theme:themeBits||'analiz edilen parçanın tarzına ve duygusuna uygun',
+        mood:p.mood||'',
+        genre:p.genre||'',
+        language:'Türkçe',
+        structure:'Verse 1, Chorus, Verse 2, Chorus, Bridge, Chorus, Outro',
+        rhyme:''
+      });
+      $('anaLyricsOut').value=data.lyrics||'';
+      $('anaLyricsBox').hidden=false;
+      toast('Söz üretildi 🎼');
+    }catch(err){toast('Söz: '+err.message);}
+    btn.disabled=false;btn.textContent=orig;
+  };
+  // attach lyrics buttons after they exist
+  const ensureLyHandlers=()=>{
+    if(!$('btnAnaLyricsCopy'))return;
+    $('btnAnaLyricsCopy').onclick=()=>{navigator.clipboard.writeText($('anaLyricsOut').value);toast('Sözler kopyalandı');};
+    $('btnAnaLyricsSend').onclick=()=>{
+      $('lyrics').value=$('anaLyricsOut').value;
+      document.querySelector('#modeSwitch button[data-m="song"]').click();
+      onLyrics();
+      toast('Sözler şarkı moduna aktarıldı');
+    };
+  };
+  ensureLyHandlers();
 }
 function bpmToTempo(bpm){
   const n=+bpm;if(!n||isNaN(n))return '';

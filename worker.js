@@ -9,7 +9,7 @@
 // Bindings: MEDIA_CACHE (KV, sha256 -> analysis JSON), RATELIMIT (KV, IP daily counters)
 // Secrets:  GEMINI_API_KEY (required), ANTHROPIC_API_KEY, OPENAI_API_KEY (optional)
 
-const DAILY_LIMITS = { enhance: 20, analyze: 5, prompt: 20, lyrics: 10 };
+const DAILY_LIMITS = { enhance: 30, analyze: 15, prompt: 30, lyrics: 20 };
 const ALLOWED_ORIGINS = [
   "https://ademtanas.github.io",
   "https://sunoforge.pages.dev",
@@ -77,14 +77,18 @@ function safeJson(text) {
 }
 
 async function checkRate(env, ip, endpoint) {
-  if (!env.RATELIMIT) return true;
+  if (!env.RATELIMIT) return { allowed: true, increment: async () => {} };
   const day = new Date().toISOString().slice(0, 10);
   const key = `rl:${endpoint}:${ip}:${day}`;
   const used = parseInt((await env.RATELIMIT.get(key)) || "0", 10);
   const max = DAILY_LIMITS[endpoint] ?? 20;
-  if (used >= max) return false;
-  await env.RATELIMIT.put(key, String(used + 1), { expirationTtl: 90000 });
-  return true;
+  if (used >= max) return { allowed: false, increment: async () => {} };
+  return {
+    allowed: true,
+    increment: async () => {
+      await env.RATELIMIT.put(key, String(used + 1), { expirationTtl: 90000 });
+    }
+  };
 }
 
 async function callGemini(env, model, system, parts, maxTokens, jsonMode) {
@@ -108,7 +112,22 @@ async function callGemini(env, model, system, parts, maxTokens, jsonMode) {
     throw new Error(`gemini ${r.status} ${t.slice(0, 200)}`);
   }
   const d = await r.json();
-  return (d.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("");
+  if (d.promptFeedback?.blockReason) {
+    throw new Error(`Gemini içeriği engelledi: ${d.promptFeedback.blockReason}`);
+  }
+  const cand = d.candidates?.[0];
+  if (!cand) {
+    throw new Error("Gemini boş cevap döndü (candidate yok)");
+  }
+  const text = (cand.content?.parts || []).map(p => p.text || "").join("");
+  if (!text.trim()) {
+    const reason = cand.finishReason || "UNKNOWN";
+    if (reason === "MAX_TOKENS") throw new Error("Gemini cevabı token sınırına takıldı");
+    if (reason === "SAFETY") throw new Error("Gemini güvenlik filtresine takıldı");
+    if (reason === "RECITATION") throw new Error("Gemini telif filtresine takıldı");
+    throw new Error(`Gemini boş cevap (finishReason: ${reason})`);
+  }
+  return text;
 }
 
 export default {
@@ -133,7 +152,8 @@ export default {
 
     // POST /analyze — audio multimodal
     if (pathname.endsWith("/analyze")) {
-      if (!await checkRate(env, ip, "analyze")) return json({ error: "Günlük analiz hakkınız doldu (5/gün). Yarın tekrar deneyin." }, 429);
+      const rate = await checkRate(env, ip, "analyze");
+      if (!rate.allowed) return json({ error: "Günlük analiz hakkınız doldu (15/gün). Yarın tekrar deneyin." }, 429);
 
       let body;
       try { body = await req.json(); } catch { return json({ error: "bad json" }, 400); }
@@ -154,20 +174,27 @@ export default {
         }
       }
 
-      const system = `You are a senior music producer and ethnomusicologist. ${TURKISH_EXPERTISE}\n\n${NO_CLICHE_RULE}\n\nAnalyze the audio. Return ONLY valid JSON matching the schema. NO prose, NO markdown.`;
+      const system = `You are a senior music producer and ethnomusicologist. ${TURKISH_EXPERTISE}\n\n${NO_CLICHE_RULE}\n\nAnalyze the audio. Return ONLY valid JSON matching the schema. NO prose, NO markdown. Every string MUST be a valid JSON string — escape any inner quotes as \\". Never include literal newlines inside string values.`;
       try {
         const text = await callGemini(
           env, GEMINI_FLASH, system,
           [
-            { text: `Analyze this track. Return ONLY JSON with this schema:\n${ANALYSIS_SCHEMA}` },
+            { text: `Analyze this track. Return ONLY JSON with this schema:\n${ANALYSIS_SCHEMA}\n\nIMPORTANT: Keep structure array to at most 8 sections. Keep all string fields concise.` },
             { inlineData: { mimeType: mime, data: audio } }
           ],
-          2500, true
+          8000, true
         );
-        const dna = safeJson(text);
+        let dna;
+        try { dna = safeJson(text); }
+        catch (parseErr) {
+          console.error("safeJson fail; raw first 1500:", String(text).slice(0, 1500));
+          console.error("raw last 500:", String(text).slice(-500));
+          throw new Error("AI cevabı parse edilemedi (büyük ihtimal Gemini cevabı kesildi veya bozuk karakter içeriyor). Tekrar deneyin veya daha kısa bir parça yükleyin.");
+        }
         if (sha && env.MEDIA_CACHE) {
           await env.MEDIA_CACHE.put(`an:${sha}`, JSON.stringify(dna), { expirationTtl: 60 * 60 * 24 * 30 });
         }
+        await rate.increment();
         return json({ ...dna, cached: false });
       } catch (e) {
         return json({ error: "Analiz başarısız: " + String(e.message || e).slice(0, 200) }, 502);
@@ -176,7 +203,8 @@ export default {
 
     // POST /prompt — idea -> Suno recipe
     if (pathname.endsWith("/prompt")) {
-      if (!await checkRate(env, ip, "prompt")) return json({ error: "Günlük prompt hakkınız doldu (20/gün)." }, 429);
+      const rate = await checkRate(env, ip, "prompt");
+      if (!rate.allowed) return json({ error: "Günlük prompt hakkınız doldu (30/gün)." }, 429);
 
       let body;
       try { body = await req.json(); } catch { return json({ error: "bad json" }, 400); }
@@ -191,7 +219,9 @@ export default {
           [{ text: `User idea: ${idea.slice(0, 800)}\n\nReturn ONLY JSON matching this schema:\n${PROMPT_SCHEMA}` }],
           2000, true
         );
-        return json(safeJson(text));
+        const parsed = safeJson(text);
+        await rate.increment();
+        return json(parsed);
       } catch (e) {
         return json({ error: "Prompt üretimi başarısız: " + String(e.message || e).slice(0, 200) }, 502);
       }
@@ -199,7 +229,8 @@ export default {
 
     // POST /lyrics — Turkish songwriter
     if (pathname.endsWith("/lyrics")) {
-      if (!await checkRate(env, ip, "lyrics")) return json({ error: "Günlük söz hakkınız doldu (10/gün)." }, 429);
+      const rate = await checkRate(env, ip, "lyrics");
+      if (!rate.allowed) return json({ error: "Günlük söz hakkınız doldu (20/gün)." }, 429);
 
       let body;
       try { body = await req.json(); } catch { return json({ error: "bad json" }, 400); }
@@ -226,6 +257,7 @@ export default {
       try {
         const text = await callGemini(env, GEMINI_FLASH, system, [{ text: userMsg }], 2000, false);
         const lyrics = String(text || "").replace(/^```[a-z]*\s*/i, "").replace(/```\s*$/, "").trim();
+        await rate.increment();
         return json({ lyrics });
       } catch (e) {
         return json({ error: "Söz üretimi başarısız: " + String(e.message || e).slice(0, 200) }, 502);
@@ -234,7 +266,8 @@ export default {
 
     // POST /enhance — text-only AI enhance (existing)
     if (pathname.endsWith("/enhance")) {
-      if (!await checkRate(env, ip, "enhance")) return json({ error: "Günlük AI hakkı doldu (20/gün)" }, 429);
+      const rate = await checkRate(env, ip, "enhance");
+      if (!rate.allowed) return json({ error: "Günlük AI hakkı doldu (30/gün)" }, 429);
 
       let body;
       try { body = await req.json(); } catch { return json({ error: "bad json" }, 400); }
@@ -270,7 +303,9 @@ export default {
           const d = await r.json();
           text = d.choices?.[0]?.message?.content || "";
         }
-        return json({ text: text.trim() });
+        const out = text.trim();
+        await rate.increment();
+        return json({ text: out });
       } catch (e) {
         return json({ error: "upstream", detail: String(e.message || e).slice(0, 200) }, 502);
       }
