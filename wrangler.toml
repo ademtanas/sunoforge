@@ -4,3 +4,11 @@ compatibility_date = "2026-06-12"
 
 [observability]
 enabled = true
+
+[[kv_namespaces]]
+binding = "MEDIA_CACHE"
+id = "f7841bb690b241a8b283f6cdca4ab6e6"
+
+[[kv_namespaces]]
+binding = "RATELIMIT"
+id = "eb50d0153b9f4a1bb23526c2812d2e85"

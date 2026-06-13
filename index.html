@@ -1440,26 +1440,22 @@ $('btnClipAI').onclick=async()=>{
   btn.disabled=false;btn.textContent='✨ AI ile Senaryolaştır';
 };
 
-/* ====== TANAS MUSIC OS — Cloud Functions backend ====== */
-const API_BASE='/api'; // Firebase hosting rewrites to europe-west1/api Cloud Function
-const USE_FUNCTIONS=true; // can flip to false to fall back to Cloudflare-only
+/* ====== TANAS MUSIC OS — Cloudflare Worker backend (paralel) ====== */
+const API_BASE='https://sunoforge-ai.ademtanas.workers.dev'; // worker host (same as AI_ENDPOINT)
+const USE_FUNCTIONS=false; // Cloudflare worker; flip to true when Cloud Functions deployed
 
 async function sha256Hex(file){
   const buf=await file.arrayBuffer();
   const h=await crypto.subtle.digest('SHA-256',buf);
   return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
-async function uploadAudio(file){
-  const T=window.__tanas;
-  if(!T||!T.ready)throw new Error('Firebase Storage hazır değil — sayfayı yenileyin');
-  const ext=(file.name.split('.').pop()||'mp3').toLowerCase();
-  const safeExt=['mp3','wav','m4a'].includes(ext)?ext:'mp3';
-  const sha=await sha256Hex(file);
-  const path=`uploads/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${safeExt}`;
-  const ref=T.storageRef(T.fbStorage,path);
-  const meta={contentType:file.type||('audio/'+safeExt),customMetadata:{sha256:sha}};
-  await T.uploadBytes(ref,file,meta);
-  return {path,sha,sizeMB:(file.size/1024/1024).toFixed(2)};
+async function fileToBase64(file){
+  const buf=await file.arrayBuffer();
+  const bytes=new Uint8Array(buf);
+  let bin='';
+  const chunk=8192;
+  for(let i=0;i<bytes.length;i+=chunk)bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+chunk));
+  return btoa(bin);
 }
 async function apiFetch(endpoint,body){
   const r=await fetch(API_BASE+endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})});
@@ -1484,17 +1480,19 @@ $('audioFile').onchange=(e)=>{
 };
 $('btnAnalyze').onclick=async()=>{
   if(!pickedAudio){toast('Önce ses dosyası seçin');return;}
-  const btn=$('btnAnalyze');btn.disabled=true;const orig=btn.textContent;btn.textContent='Yükleniyor…';
+  const btn=$('btnAnalyze');btn.disabled=true;const orig=btn.textContent;btn.textContent='Hazırlanıyor…';
   $('analyzeResult').hidden=true;
   $('analyzeProgress').hidden=false;
-  $('analyzeProgress').innerHTML='<div class="note">📤 Ses Storage\'a yükleniyor…</div>';
+  $('analyzeProgress').innerHTML='<div class="note">📤 Dosya hazırlanıyor (sha256 + base64)…</div>';
   try{
-    const up=await uploadAudio(pickedAudio);
-    $('analyzeProgress').innerHTML='<div class="note">🎧 Gemini parçayı dinliyor (~30-60 sn)…</div>';
+    const sha=await sha256Hex(pickedAudio);
+    const audio=await fileToBase64(pickedAudio);
+    const mime=pickedAudio.type||'audio/mpeg';
+    $('analyzeProgress').innerHTML='<div class="note">🎧 Gemini parçayı dinliyor (~20-40 sn)…</div>';
     btn.textContent='Analiz ediliyor…';
-    const data=await apiFetch('/analyze',{storagePath:up.path});
+    const data=await apiFetch('/analyze',{audio,mime,sha256:sha});
     $('analyzeProgress').hidden=true;
-    renderAnalyze(data,up);
+    renderAnalyze(data,{sha,sizeMB:(pickedAudio.size/1024/1024).toFixed(2)});
   }catch(err){
     $('analyzeProgress').innerHTML='<div class="note" style="color:var(--red)">❌ '+err.message+'</div>';
     toast('Analiz başarısız: '+err.message);
