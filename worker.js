@@ -92,42 +92,50 @@ async function checkRate(env, ip, endpoint) {
 }
 
 async function callGemini(env, model, system, parts, maxTokens, jsonMode) {
-  const r = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: system }] },
-        contents: [{ role: "user", parts }],
-        generationConfig: {
-          maxOutputTokens: maxTokens,
-          ...(jsonMode ? { responseMimeType: "application/json" } : {})
-        }
-      })
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
+  const body = JSON.stringify({
+    systemInstruction: { parts: [{ text: system }] },
+    contents: [{ role: "user", parts }],
+    generationConfig: {
+      maxOutputTokens: maxTokens,
+      ...(jsonMode ? { responseMimeType: "application/json" } : {})
     }
-  );
-  if (!r.ok) {
-    const t = await r.text();
-    throw new Error(`gemini ${r.status} ${t.slice(0, 200)}`);
+  });
+
+  // Retry on 503 / 429 (overload), 3 attempts total
+  let lastErr = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await new Promise(res => setTimeout(res, 1500 * attempt)); // 1.5s, 3s
+    const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body });
+    if (r.status === 503) {
+      lastErr = "Gemini şu an çok yoğun (503). Birkaç saniye sonra tekrar deneyin.";
+      continue;
+    }
+    if (r.status === 429) {
+      lastErr = "Gemini günlük kotası dolu (429). Yarın tekrar deneyin veya başka model seçin.";
+      continue;
+    }
+    if (!r.ok) {
+      const t = await r.text();
+      throw new Error(`gemini ${r.status} ${t.slice(0, 200)}`);
+    }
+    const d = await r.json();
+    if (d.promptFeedback?.blockReason) {
+      throw new Error(`Gemini içeriği engelledi: ${d.promptFeedback.blockReason}`);
+    }
+    const cand = d.candidates?.[0];
+    if (!cand) throw new Error("Gemini boş cevap döndü (candidate yok)");
+    const text = (cand.content?.parts || []).map(p => p.text || "").join("");
+    if (!text.trim()) {
+      const reason = cand.finishReason || "UNKNOWN";
+      if (reason === "MAX_TOKENS") throw new Error("Gemini cevabı token sınırına takıldı");
+      if (reason === "SAFETY") throw new Error("Gemini güvenlik filtresine takıldı");
+      if (reason === "RECITATION") throw new Error("Gemini telif filtresine takıldı");
+      throw new Error(`Gemini boş cevap (finishReason: ${reason})`);
+    }
+    return text;
   }
-  const d = await r.json();
-  if (d.promptFeedback?.blockReason) {
-    throw new Error(`Gemini içeriği engelledi: ${d.promptFeedback.blockReason}`);
-  }
-  const cand = d.candidates?.[0];
-  if (!cand) {
-    throw new Error("Gemini boş cevap döndü (candidate yok)");
-  }
-  const text = (cand.content?.parts || []).map(p => p.text || "").join("");
-  if (!text.trim()) {
-    const reason = cand.finishReason || "UNKNOWN";
-    if (reason === "MAX_TOKENS") throw new Error("Gemini cevabı token sınırına takıldı");
-    if (reason === "SAFETY") throw new Error("Gemini güvenlik filtresine takıldı");
-    if (reason === "RECITATION") throw new Error("Gemini telif filtresine takıldı");
-    throw new Error(`Gemini boş cevap (finishReason: ${reason})`);
-  }
-  return text;
+  throw new Error(lastErr || "Gemini'ye 3 denemede ulaşılamadı");
 }
 
 export default {
