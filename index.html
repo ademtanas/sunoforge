@@ -770,12 +770,30 @@ mkSelect('fb','Füzyon Dengesi (Balance)',D.fusionBalance,gT);
 mkSelect('lang','Dil / Köken (Language)',D.languages,gT);
 mkSelect('tpSub','Türk Pop Alt Türü',D.turkPopSub,gT);
 mkSelect('kidsG','Çocuk Şarkı Türü',D.kidsGenre,gT);
-S.genre.addEventListener('change',()=>{fill(S.sub,D.subgenres[S.genre.value]||[]);build();});
+S.genre.addEventListener('change',()=>{fill(S.sub,D.subgenres[S.genre.value]||[]);updateConditionalFields();build();});
 
 const gTu=$('gridTurkish');
 mkSelect('turk','Türk Müziği Stili',D.turkStyles,gTu);
 mkSelect('makam','Makam',D.makams,gTu);
 mkSelect('ana','Anatolian Articulation',D.anatolianArt,gTu);
+
+function setFieldVisible(id,vis){if(S[id]&&S[id].parentNode)S[id].parentNode.style.display=vis?'':'none';}
+function updateConditionalFields(){
+  const g=(val('genre')||'').toLowerCase();
+  const t=(val('turk')||'')||'';
+  const vt=(val('vt')||'').toLowerCase();
+  const isTurkishCtx=/türk|arabesk|anadolu|tasavvuf|fantezi|özgün/i.test(g) || !!t;
+  const isTurkPop = g==='türk pop' || g==='türk sanat müziği';
+  const isChild = /child/.test(vt) || g==="children's music";
+  const isElectronic = /electronic|edm|house|techno|trance|drum and bass|dubstep|synthwave|vaporwave|lo-fi|chillwave|chillhop|trip-hop|ambient/i.test(g);
+  setFieldVisible('tpSub', isTurkPop);
+  setFieldVisible('kidsG', isChild);
+  setFieldVisible('ana', isTurkishCtx);
+  setFieldVisible('makam', isTurkishCtx);
+  // Card 10 Synth & Modulation
+  const gridSynth=$('gridSynth');
+  if(gridSynth){const card10=gridSynth.closest('details');if(card10)card10.style.display=isElectronic?'':'none';}
+}
 
 const gW=$('gridWorld');
 mkSelect('wreg','Bölge / Kıta',Object.keys(D.worldRegions),gW);
@@ -811,6 +829,8 @@ mkSelect('vtim','Vokal Tınısı (Timbre)',D.vocalTimbres,gV);
 mkSelect('vfx','Vokal Efekti',D.vocalFx,gV);
 mkSelect('rangeF','Kadın Aralığı',D.rangesF,gV);
 mkSelect('rangeM','Erkek Aralığı',D.rangesM,gV);
+S.vt.addEventListener('change',()=>{updateConditionalFields();});
+S.turk.addEventListener('change',()=>{updateConditionalFields();});
 
 const gM=$('gridMix');
 mkSelect('mix','Mix Karakteri',D.mixChar,gM);
@@ -1744,6 +1764,7 @@ $('btnLyricsSend').onclick=()=>{
 if('serviceWorker' in navigator && location.protocol==='https:')
   navigator.serviceWorker.register('sw.js').catch(()=>{});
 /* init */
+updateConditionalFields();
 build();
 
 </script>
