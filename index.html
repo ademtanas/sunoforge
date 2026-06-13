@@ -1459,9 +1459,16 @@ async function fileToBase64(file){
 }
 async function apiFetch(endpoint,body){
   const r=await fetch(API_BASE+endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})});
-  let data=null;try{data=await r.json();}catch{}
+  const txt=await r.text();
+  let data=null;
+  try{data=JSON.parse(txt);}catch(e){
+    if(r.ok){
+      console.warn('Bozuk JSON cevabı:',txt.slice(0,500));
+      throw new Error('AI cevabı JSON değil — tekrar deneyin');
+    }
+  }
   if(!r.ok){
-    const msg=(data&&data.error)||('Sunucu hatası ('+r.status+')');
+    const msg=(data&&data.error)||('Sunucu hatası ('+r.status+'): '+txt.slice(0,160));
     throw new Error(msg);
   }
   return data;
