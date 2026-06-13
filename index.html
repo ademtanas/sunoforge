@@ -155,7 +155,29 @@ footer{margin-top:30px;color:var(--dim);font-size:12px;text-align:center}
 .qsi .qb.eL .e{color:#7fbf85}
 .qsi .qb.eM .e{color:var(--amber)}
 .qsi .qb.eH .e{color:var(--red)}
-/* mode switch (Şarkı / Klip) */
+/* idea-to-prompt panel */
+.idea{display:flex;gap:8px;align-items:stretch;margin-bottom:16px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px}
+.idea input{flex:1;background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:9px 12px;font:inherit;font-size:14px}
+.idea input:focus{outline:none;border-color:var(--amber)}
+.idea .lbl{font-family:'Unbounded';font-size:11.5px;color:var(--amber2);align-self:center;letter-spacing:.5px;white-space:nowrap;padding:0 4px}
+.idea button{white-space:nowrap}
+/* analyze result */
+.dna{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px 14px;font-size:13px;line-height:1.7;margin-bottom:10px}
+.dna div b{color:var(--amber2);font-weight:500}
+.cached-tag{display:inline-block;background:rgba(95,203,143,.15);border:1px solid rgba(95,203,143,.4);color:var(--green);padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600;margin-left:8px}
+.struct-list{font-family:'IBM Plex Mono';font-size:12.5px;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:10px 12px;margin-top:6px}
+.struct-list .row{display:flex;justify-content:space-between;gap:12px;padding:3px 0;border-bottom:1px dashed var(--line)}
+.struct-list .row:last-child{border:0}
+.struct-list .row .e-low{color:#7fbf85}
+.struct-list .row .e-medium{color:var(--amber)}
+.struct-list .row .e-high{color:var(--red)}
+.remix-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.remix-list .rx{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:12.5px;line-height:1.55}
+/* lyric writer */
+.songbtn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--bg);color:var(--text);padding:5px 11px;border-radius:99px;font-size:12.5px;cursor:pointer;font:inherit;font-size:12.5px}
+.songbtn:hover{border-color:var(--amber);color:var(--amber2)}
+.songbtn.on{background:var(--amber);color:#1A1206;border-color:var(--amber)}
+/* mode switch (Şarkı / Klip / Tarz Analizi / Söz Yazarı) */
 .modes{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:16px;background:var(--panel)}
 .modes button{flex:1;background:transparent;border:0;color:var(--muted);padding:11px 16px;font:inherit;font-size:14px;cursor:pointer;font-family:'Unbounded';font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:.15s}
 .modes button.active{background:var(--amber);color:#1A1206}
@@ -170,6 +192,26 @@ footer{margin-top:30px;color:var(--dim);font-size:12px;text-align:center}
 .clip-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 6px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js';
+  import { getStorage, ref as storageRef, uploadBytes, updateMetadata } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-storage.js';
+  const firebaseConfig = {
+    apiKey: "AIzaSyAcfBlSyKrij0hbB_eX9jZY0SHVLMoO35w",
+    authDomain: "tanasmusic07.firebaseapp.com",
+    projectId: "tanasmusic07",
+    storageBucket: "tanasmusic07.firebasestorage.app",
+    messagingSenderId: "727316184769"
+  };
+  try {
+    const fbApp = initializeApp(firebaseConfig);
+    const fbStorage = getStorage(fbApp);
+    window.__tanas = { fbApp, fbStorage, storageRef, uploadBytes, updateMetadata, ready: true };
+  } catch (e) {
+    console.warn('Firebase init failed:', e);
+    window.__tanas = { ready: false, error: String(e) };
+  }
+  window.dispatchEvent(new CustomEvent('tanas-ready'));
+</script>
 </head>
 <body>
 <div class="wrap">
@@ -255,11 +297,19 @@ footer{margin-top:30px;color:var(--dim);font-size:12px;text-align:center}
   <div class="presets" id="presetStrip"></div>
 
   <div class="modes" id="modeSwitch">
-    <button data-m="song" class="active" type="button">🎵 Şarkı Prompt</button>
-    <button data-m="clip" type="button">🎬 Klip Prompt</button>
+    <button data-m="song" class="active" type="button">🎵 Şarkı</button>
+    <button data-m="clip" type="button">🎬 Klip</button>
+    <button data-m="analyze" type="button">🎯 Tarz Analizi</button>
+    <button data-m="lyrics" type="button">✍️ Söz Yazarı</button>
   </div>
 
   <div id="modeSong">
+
+  <div class="idea">
+    <span class="lbl">💡 FİKİRDEN PROMPT</span>
+    <input type="text" id="ideaInput" placeholder="Bir cümleyle fikriniz: 'yağmurlu gecede ayrılık, arabesk, erkek vokal'">
+    <button class="btn primary" id="btnIdea" type="button">Form Doldur</button>
+  </div>
 
   <details class="card" open id="cardLyrics">
     <summary><span class="num">01</span><h2>Şarkı Sözleri &amp; Yapı</h2><span class="hint">bölümler otomatik algılanır</span></summary>
@@ -384,6 +434,52 @@ footer{margin-top:30px;color:var(--dim);font-size:12px;text-align:center}
       </div>
     </details>
   </div><!-- /modeClip -->
+
+  <div id="modeAnalyze" hidden>
+    <details class="card" open>
+      <summary><span class="num">A1</span><h2>🎯 Tarz Analizi</h2><span class="hint">audio yükle, AI dinlesin (mp3/wav/m4a, ≤20MB)</span></summary>
+      <div class="body">
+        <div class="secbtns">
+          <input type="file" id="audioFile" accept=".mp3,.wav,.m4a,audio/mpeg,audio/wav,audio/x-m4a,audio/mp4" hidden>
+          <button class="btn" id="btnAudioPick" type="button">🎵 Ses Dosyası Seç</button>
+          <span id="audioName" class="note" style="font-size:12.5px;margin:0">Henüz dosya seçilmedi</span>
+          <button class="btn primary" id="btnAnalyze" type="button" hidden>🔍 Analiz Et</button>
+        </div>
+        <div class="note">Analiz ilham ve teknik çözümleme amaçlıdır; birebir kopya değil tarz üretimi hedeflenir. Aynı dosya tekrar yüklenirse AI'a gitmez, cache'ten döner.</div>
+        <div id="analyzeProgress" hidden style="margin-top:12px"></div>
+        <div id="analyzeResult" hidden style="margin-top:14px"></div>
+      </div>
+    </details>
+  </div><!-- /modeAnalyze -->
+
+  <div id="modeLyrics" hidden>
+    <details class="card" open>
+      <summary><span class="num">L1</span><h2>✍️ Söz Yazarı</h2><span class="hint">tema yaz, AI Türkçe söz üretsin</span></summary>
+      <div class="body">
+        <label class="field"><b>Tema (zorunlu)</b>
+          <input type="text" id="lyTheme" placeholder="örn: yağmurlu gecede ayrılık ve nostalji">
+        </label>
+        <div class="grid" id="gridLyMeta" style="margin-top:10px"></div>
+        <div class="subhead">Şarkı Yapısı</div>
+        <div class="secbtns" id="lyStructPresets">
+          <button class="songbtn" data-s="Intro, Verse 1, Chorus, Verse 2, Chorus, Bridge, Chorus, Outro" type="button">Standart Pop</button>
+          <button class="songbtn" data-s="Intro, Verse 1, Pre-Chorus, Chorus, Verse 2, Pre-Chorus, Chorus, Bridge, Chorus, Outro" type="button">Uzun Pop</button>
+          <button class="songbtn" data-s="Verse 1, Chorus, Verse 2, Chorus, Outro" type="button">Kısa</button>
+          <button class="songbtn" data-s="Intro, Verse 1, Hook, Verse 2, Hook, Bridge, Hook, Outro" type="button">Rap Hook'lu</button>
+          <button class="songbtn" data-s="Intro, Taksim, Verse 1, Nakarat, Verse 2, Nakarat, Outro" type="button">Arabesk</button>
+        </div>
+        <input type="text" id="lyStruct" placeholder="Standart yapı (Intro, Verse 1, Chorus, ...) — yapı butonları doldurur, kendin de yazabilirsin" style="margin-top:8px">
+        <div class="secbtns" style="margin-top:14px">
+          <button class="btn primary" id="btnLyricsGen" type="button">🪶 Söz Üret</button>
+          <span class="spacer"></span>
+          <button class="btn" id="btnLyricsSend" type="button" hidden>📥 Söz Editörüne Aktar</button>
+          <button class="btn" id="btnLyricsCopy" type="button" hidden>📋 Kopyala</button>
+        </div>
+        <textarea id="lyOutput" placeholder="Üretilen şarkı sözleri burada görünecek..." style="margin-top:12px"></textarea>
+        <div class="note">Çıktı [Verse 1] / [Chorus] gibi Suno etiketleriyle gelir. "Söz Editörüne Aktar" Şarkı sekmesindeki sözler alanını doldurur.</div>
+      </div>
+    </details>
+  </div><!-- /modeLyrics -->
 
   <footer>SunoForge — tüm araç ücretsizdir. Çıktılar Suno'nun modeline bağlıdır; aynı prompt'la birden çok üretim deneyin.</footer>
 </div>
@@ -1197,15 +1293,17 @@ mkSelect('clipPalette','Renk Paleti',D.clipPalette,gCV);
 mkSelect('clipCamera','Kamera Dili',D.clipCamera,gCV);
 mkSelect('clipLight','Işık',D.clipLighting,gCV);
 
+const MODE_ELEMS={song:'modeSong',clip:'modeClip',analyze:'modeAnalyze',lyrics:'modeLyrics'};
 document.querySelectorAll('#modeSwitch button').forEach(b=>{
   b.onclick=()=>{
     currentMode=b.dataset.m;
     document.querySelectorAll('#modeSwitch button').forEach(x=>x.classList.toggle('active',x===b));
-    $('modeSong').hidden=currentMode!=='song';
-    $('modeClip').hidden=currentMode!=='clip';
-    document.querySelector('.console').style.display=currentMode==='clip'?'none':'';
-    document.body.style.paddingBottom=currentMode==='clip'?'30px':'';
+    for(const m in MODE_ELEMS){$(MODE_ELEMS[m]).hidden=currentMode!==m;}
+    const consoleVisible=currentMode==='song';
+    document.querySelector('.console').style.display=consoleVisible?'':'none';
+    document.body.style.paddingBottom=consoleVisible?'':'30px';
     if(currentMode==='song')build();
+    if(currentMode==='lyrics')initLyricsMode();
   };
 });
 
@@ -1340,6 +1438,210 @@ $('btnClipAI').onclick=async()=>{
     toast(scenes.length+' sahne AI ile üretildi 🎬');
   }catch(err){toast('AI: '+err.message);}
   btn.disabled=false;btn.textContent='✨ AI ile Senaryolaştır';
+};
+
+/* ====== TANAS MUSIC OS — Cloud Functions backend ====== */
+const API_BASE='/api'; // Firebase hosting rewrites to europe-west1/api Cloud Function
+const USE_FUNCTIONS=true; // can flip to false to fall back to Cloudflare-only
+
+async function sha256Hex(file){
+  const buf=await file.arrayBuffer();
+  const h=await crypto.subtle.digest('SHA-256',buf);
+  return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function uploadAudio(file){
+  const T=window.__tanas;
+  if(!T||!T.ready)throw new Error('Firebase Storage hazır değil — sayfayı yenileyin');
+  const ext=(file.name.split('.').pop()||'mp3').toLowerCase();
+  const safeExt=['mp3','wav','m4a'].includes(ext)?ext:'mp3';
+  const sha=await sha256Hex(file);
+  const path=`uploads/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${safeExt}`;
+  const ref=T.storageRef(T.fbStorage,path);
+  const meta={contentType:file.type||('audio/'+safeExt),customMetadata:{sha256:sha}};
+  await T.uploadBytes(ref,file,meta);
+  return {path,sha,sizeMB:(file.size/1024/1024).toFixed(2)};
+}
+async function apiFetch(endpoint,body){
+  const r=await fetch(API_BASE+endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})});
+  let data=null;try{data=await r.json();}catch{}
+  if(!r.ok){
+    const msg=(data&&data.error)||('Sunucu hatası ('+r.status+')');
+    throw new Error(msg);
+  }
+  return data;
+}
+
+/* ====== TARZ ANALİZİ (REVERSE MODE) ====== */
+let pickedAudio=null;
+$('btnAudioPick').onclick=()=>$('audioFile').click();
+$('audioFile').onchange=(e)=>{
+  const f=e.target.files[0];if(!f)return;
+  if(f.size>20*1024*1024){toast('Dosya 20MB üstü — daha küçük seçin');return;}
+  if(!/\.(mp3|wav|m4a)$/i.test(f.name)){toast('Sadece mp3 / wav / m4a desteklenir');return;}
+  pickedAudio=f;
+  $('audioName').textContent=f.name+' ('+(f.size/1024/1024).toFixed(1)+' MB)';
+  $('btnAnalyze').hidden=false;
+};
+$('btnAnalyze').onclick=async()=>{
+  if(!pickedAudio){toast('Önce ses dosyası seçin');return;}
+  const btn=$('btnAnalyze');btn.disabled=true;const orig=btn.textContent;btn.textContent='Yükleniyor…';
+  $('analyzeResult').hidden=true;
+  $('analyzeProgress').hidden=false;
+  $('analyzeProgress').innerHTML='<div class="note">📤 Ses Storage\'a yükleniyor…</div>';
+  try{
+    const up=await uploadAudio(pickedAudio);
+    $('analyzeProgress').innerHTML='<div class="note">🎧 Gemini parçayı dinliyor (~30-60 sn)…</div>';
+    btn.textContent='Analiz ediliyor…';
+    const data=await apiFetch('/analyze',{storagePath:up.path});
+    $('analyzeProgress').hidden=true;
+    renderAnalyze(data,up);
+  }catch(err){
+    $('analyzeProgress').innerHTML='<div class="note" style="color:var(--red)">❌ '+err.message+'</div>';
+    toast('Analiz başarısız: '+err.message);
+  }
+  btn.disabled=false;btn.textContent=orig;
+};
+function renderAnalyze(p,up){
+  const r=$('analyzeResult');r.hidden=false;
+  const cached=p.cached?'<span class="cached-tag">⚡ cache</span>':'';
+  const v=p.vocal_dna||{};
+  const i=p.instruments||{};
+  const tag=(label,val)=>val?`<div><b>${label}:</b> ${val}</div>`:'';
+  const struct=(p.structure||[]).map(s=>`<div class="row"><span>${s.section||'?'}</span><span style="color:var(--dim)">${s.start||''} · ${s.duration||''}s</span><span class="e-${(s.energy||'medium').toLowerCase()}">${s.energy||''}</span></div>`).join('');
+  const remix=(p.remix_ideas||[]).map(x=>`<div class="rx">💡 ${x}</div>`).join('');
+  r.innerHTML=`
+    <div class="persec">
+      <h4>📊 Analiz Sonucu ${cached}</h4>
+      <div class="dna">
+        ${tag('Tür',p.genre)}${tag('Alt Tür',p.sub_genre)}
+        ${tag('BPM',p.bpm)}${tag('Ölçü',p.time_signature)}
+        ${tag('Tonalite',p.key)}${tag('Duygu',p.mood)}
+        ${tag('Armoni',p.harmony)}${tag('Mix',p.mix_character)}
+        ${tag('Lead',i.lead)}${tag('Eşlik',i.accompaniment)}
+        ${tag('Bas',i.bass)}${tag('Perküsyon',i.percussion)}
+        ${tag('Vokal',v.type)}${tag('Aralık',v.register)}
+        ${tag('Tını',v.timbre)}${tag('Teknik',v.technique)}
+        ${tag('Vokal FX',v.effects)}${tag('Vokal Duygu',v.emotion)}
+        ${tag('Prodüksiyon',p.production_style)}
+      </div>
+      ${p.hook&&p.hook.description?`<div class="note"><b style="color:var(--amber2)">🪝 Hook:</b> ${p.hook.description}${p.hook.location?' <i style="color:var(--dim)">('+p.hook.location+')</i>':''}</div>`:''}
+      ${struct?`<div class="subhead">🧱 Bölüm Haritası</div><div class="struct-list">${struct}</div>`:''}
+      ${remix?`<div class="subhead">🔀 Remix Fikirleri</div><div class="remix-list">${remix}</div>`:''}
+      <div class="subhead">🎯 Hazır Suno Prompt</div>
+      <textarea readonly id="anaSunoPrompt" style="min-height:90px;background:var(--bg)">${(p.suno_prompt||'').replace(/</g,'&lt;')}</textarea>
+      ${p.user_note?`<div class="note" style="margin-top:8px"><b style="color:var(--amber2)">📝 Not:</b> ${p.user_note}</div>`:''}
+      <div class="secbtns" style="margin-top:10px">
+        <button class="btn primary" id="btnApplyAnalyze" type="button">📥 Forma Uygula (Şarkı moduna geç)</button>
+        <button class="btn" id="btnCopySunoPrompt" type="button">📋 Suno Prompt Kopyala</button>
+      </div>
+    </div>
+  `;
+  $('btnApplyAnalyze').onclick=()=>applyAnalysisToForm(p);
+  $('btnCopySunoPrompt').onclick=()=>{navigator.clipboard.writeText(p.suno_prompt||'');toast('Suno prompt kopyalandı');};
+}
+function bpmToTempo(bpm){
+  const n=+bpm;if(!n||isNaN(n))return '';
+  if(n<80)return 'Slow, 60-80 BPM';
+  if(n<128)return 'Medium, 90-120 BPM';
+  if(n<170)return 'Fast, 130-160 BPM';
+  return 'Very fast, 170+ BPM';
+}
+function applyAnalysisToForm(p){
+  const v=p.vocal_dna||{},i=p.instruments||{};
+  // Switch to song mode first
+  document.querySelector('#modeSwitch button[data-m="song"]').click();
+  // clear form
+  freshForm();
+  const map={
+    genre:p.genre,sub:p.sub_genre,
+    tempo:bpmToTempo(p.bpm),timesig:p.time_signature,
+    mood:p.mood,harmony:p.harmony,
+    lead:i.lead,acc:i.accompaniment,bass:i.bass,perc:i.percussion,
+    vt:v.type,vs:v.technique,vtim:v.timbre,vfx:v.effects,
+    mix:p.mix_character,prod:p.production_style
+  };
+  if(v.register){
+    const fem=/soprano|alto|contralto|mezzo/i.test(v.register);
+    map[fem?'rangeF':'rangeM']=v.register;
+  }
+  let count=0;
+  if(map.genre&&S.genre){
+    const m=bestMatch(map.genre,D.genres);
+    if(m){S.genre.value=m;fill(S.sub,D.subgenres[m]||[]);count++;}
+  }
+  for(const id in map){
+    if(id==='genre')continue;
+    if(!map[id]||!S[id])continue;
+    const opts=[...S[id].options].slice(1).map(o=>o.value);
+    const m=bestMatch(map[id],opts);
+    if(m){S[id].value=m;count++;}
+  }
+  // free text: production_style fallback if not mapped
+  if(p.suno_prompt){$('freeText').value=p.user_note||'';}
+  build();
+  toast(count+' alan analizden dolduruldu ✨');
+}
+
+/* ====== FİKİRDEN PROMPT ====== */
+$('btnIdea').onclick=async()=>{
+  const idea=$('ideaInput').value.trim();
+  if(!idea){toast('Bir fikir yazın');return;}
+  const btn=$('btnIdea');btn.disabled=true;const orig=btn.textContent;btn.textContent='AI düşünüyor…';
+  try{
+    const data=await apiFetch('/prompt',{idea});
+    applyAnalysisToForm({
+      genre:data.genre,sub_genre:data.sub_genre,bpm:data.bpm,time_signature:data.time_signature,
+      mood:data.mood,harmony:data.harmony,key:data.key,
+      instruments:data.instruments,vocal_dna:data.vocal_dna,
+      mix_character:data.mix_character||'',production_style:data.production_style,
+      suno_prompt:data.suno_prompt,user_note:data.interpretation
+    });
+    toast(data.interpretation?'Fikrin yorumlandı: '+data.interpretation.slice(0,80):'Form dolduruldu ✨');
+  }catch(err){toast('Fikir → prompt: '+err.message);}
+  btn.disabled=false;btn.textContent=orig;
+};
+
+/* ====== SÖZ YAZARI ====== */
+let lyricsInit=false;
+function initLyricsMode(){
+  if(lyricsInit)return;lyricsInit=true;
+  const gLM=$('gridLyMeta');
+  mkSelect('lyMood','Duygu',D.moods,gLM);
+  mkSelect('lyGenre','Tür',D.genres,gLM);
+  mkSelect('lyLang','Dil',D.languages,gLM);
+  mkSelect('lyRhyme','Kafiye / Akış',['AABB rhyme','ABAB rhyme','Free verse','7 hece (mani)','11 hece (koşma)','15 hece (hece ölçüsü)','Sustained vowels'],gLM);
+  S.lyLang.value='Turkish';
+  document.querySelectorAll('#lyStructPresets .songbtn').forEach(b=>{
+    b.onclick=()=>{document.querySelectorAll('#lyStructPresets .songbtn').forEach(x=>x.classList.remove('on'));b.classList.add('on');$('lyStruct').value=b.dataset.s;};
+  });
+  // default
+  document.querySelector('#lyStructPresets .songbtn').click();
+}
+$('btnLyricsGen').onclick=async()=>{
+  const theme=$('lyTheme').value.trim();
+  if(!theme){toast('Tema yazın');return;}
+  const btn=$('btnLyricsGen');btn.disabled=true;const orig=btn.textContent;btn.textContent='Söz üretiliyor…';
+  try{
+    const data=await apiFetch('/lyrics',{
+      theme,
+      mood:S.lyMood?S.lyMood.value:'',
+      genre:S.lyGenre?S.lyGenre.value:'',
+      language:S.lyLang?S.lyLang.value:'Türkçe',
+      structure:$('lyStruct').value||'Intro, Verse 1, Chorus, Verse 2, Chorus, Bridge, Chorus, Outro',
+      rhyme:S.lyRhyme?S.lyRhyme.value:''
+    });
+    $('lyOutput').value=data.lyrics||'';
+    $('btnLyricsSend').hidden=false;$('btnLyricsCopy').hidden=false;
+    toast('Söz üretildi 🪶');
+  }catch(err){toast('Söz: '+err.message);}
+  btn.disabled=false;btn.textContent=orig;
+};
+$('btnLyricsCopy').onclick=()=>{navigator.clipboard.writeText($('lyOutput').value);toast('Sözler kopyalandı');};
+$('btnLyricsSend').onclick=()=>{
+  $('lyrics').value=$('lyOutput').value;
+  document.querySelector('#modeSwitch button[data-m="song"]').click();
+  onLyrics();
+  toast('Sözler şarkı moduna aktarıldı');
 };
 
 /* PWA service worker */
