@@ -738,9 +738,131 @@ const PRESETS = [
  {name:"🎹 Temel (Hızlı)", v:{genre:"Pop",sub:"Indie Pop",lang:"English",mood:"Uplifting",tempo:"Medium, 90-120 BPM",harmony:"Major",lead:"Acoustic guitar",acc:"Piano chords",bass:"Acoustic bass",perc:"Subtle percussion",vt:"Female vocal",mix:"Balanced mixing",prod:"Clean modern studio production",free:"clean modern pop ready for radio"}}
 ];
 
+/* ====== MUSIC TERM TR DICTIONARY ====== */
+const TR={
+ // Moods
+ "Chill & relaxed":"Sakin/rahat","Happy":"Mutlu","Energetic":"Enerjik","Melancholic":"Hüzünlü",
+ "Dark":"Karanlık","Epic":"Epik","Romantic":"Romantik","Uplifting":"Coşkulu","Mysterious":"Gizemli",
+ "Nostalgic":"Nostaljik","Bittersweet":"Acı tatlı","Defiant":"İsyankâr","Hopeful":"Umutlu","Tense":"Gergin",
+ // Harmony
+ "Major":"Majör","Minor":"Minör","Diatonic":"Diatonik","Chromatic":"Kromatik",
+ "Modal (maqam-based)":"Makam tabanlı","Pentatonic":"Pentatonik","Harmonic minor":"Armonik minör",
+ "Blues harmony":"Blues armonisi","Whole tone":"Bütün ton",
+ // Leads
+ "Turkish traditional bağlama":"Geleneksel bağlama","Turkish electric baglama":"Elektro bağlama",
+ "Turkish psychedelic electric baglama":"Psikedelik elektro bağlama","Oud":"Ud","Ney":"Ney","Kaval":"Kaval",
+ "Zurna":"Zurna","Cura":"Cura","Kemençe":"Kemençe","Duduk":"Duduk",
+ "Clarinet (Turkish gypsy style)":"Roman klarnet","Accordion":"Akordeon","Acoustic guitar":"Akustik gitar",
+ "Distorted guitar":"Distortion gitar","Electric guitar":"Elektro gitar",
+ "Electric metal guitar":"Metal elektro gitar","Electric piano (Rhodes)":"Elektro piyano (Rhodes)",
+ "Fretless guitar":"Fretsiz gitar","Lead synth":"Ana synth",
+ "Mellow electric guitar":"Yumuşak elektro gitar","Piano":"Piyano","Saxophone":"Saksofon",
+ "Sitar":"Sitar","Synth pads":"Synth pad","Violin":"Keman","Woodwinds":"Tahta üflemeliler",
+ // Accomp
+ "Acoustic saz ensemble":"Akustik saz topluluğu",
+ "Turkish classical ensemble (oud, qanun, ney, violin, tanbur)":"TSM topluluğu (ud,kanun,ney,keman,tanbur)",
+ "Turkish arabesque strings":"Arabesk yaylılar","Acoustic drums":"Akustik davul",
+ "Ambient texture":"Atmosferik doku","Arpeggiated acoustic guitar":"Arpejli akustik gitar",
+ "Arpeggiated electric guitar":"Arpejli elektro gitar","Brass section":"Bakır üflemeli grup",
+ "Pad layer":"Pad katmanı","Piano chords":"Piyano akorları","String section":"Yaylı grubu",
+ "Strumming acoustic guitar":"Vuruşlu akustik gitar","Strumming electric guitar":"Vuruşlu elektro gitar",
+ "Subtle percussion":"İnce perküsyon","Synth strings":"Synth yaylılar",
+ // Bass
+ "Deep smooth sub bass":"Derin sub bas","Electric bass guitar":"Elektro bas gitar",
+ "Metal rock bass":"Metal rock bas","Synth bass":"Synth bas","Funky bassline":"Funky bas",
+ "Walking bassline":"Walking bas","Melodic bassline":"Melodik bas","Acoustic bass":"Akustik bas",
+ "Fretless bass":"Fretsiz bas","808 bass":"808 bas",
+ // Perc
+ "Darbuka":"Darbuka","Darbuka and riq":"Darbuka ve riq","Riq frame drum":"Riq (tef)",
+ "Bendir":"Bendir","Bendir and riq":"Bendir ve riq","Davul (Turkish bass drum)":"Davul",
+ "Asma davul and zurna groove":"Asma davul-zurna grubu","808 drums":"808 drum",
+ "Acoustic drum kit":"Akustik davul seti",
+ "Acoustic drums, aggressive crashes":"Akustik davul + agresif ziller",
+ "Acoustic drums, closed hi-hats, ride":"Akustik davul + kapalı hi-hat + ride",
+ "Acoustic drums, open hi-hats, crashes":"Akustik davul + açık hi-hat + ziller",
+ "Cinematic war drums":"Sinematik savaş davulları","Drum machine":"Drum machine",
+ "Tight snare, sharp hi-hats":"Sıkı trampet + keskin hi-hat",
+ // Vocal Style
+ "Belt technique with powerful projection":"Belt tekniği (güçlü)",
+ "Mixed voice with balanced resonance":"Karışık ses (dengeli rezonans)",
+ "Chest voice with strong power":"Güçlü göğüs sesi","Full voice projection":"Tam ses projeksiyonu",
+ "Dynamic control from soft to powerful":"Yumuşaktan güçlüye dinamik",
+ "Energetic, joyful, passionate":"Enerjik, neşeli, tutkulu",
+ "Calm, melancholic, introspective":"Sakin, melankolik, içe dönük",
+ "Rhythmic, hypnotic, trance-like":"Ritmik, hipnotik, trans",
+ "Fast-paced flowing delivery":"Hızlı akıcı akış","Call-and-response style":"Çağrı ve cevap",
+ "Maqam style with spiritual expression":"Makam stili (manevi)",
+ "Restrained grief, emotional weight":"Tutuk acı, duygusal ağırlık",
+ "Melodic rap flow, half-sung":"Melodik rap akış (yarı söylenen)",
+ "Whispered intimate delivery":"Fısıltılı samimi okuyuş",
+ // Vocal Timbre
+ "Clear":"Berrak","Resonant":"Rezonanslı","Airy":"Havadar","Husky":"Boğuk","Breathy":"Nefesli",
+ "Gravelly":"Çakıllı","Rich timbre":"Zengin tını","Clear articulation":"Net telaffuz",
+ "Strong resonance":"Güçlü rezonans","Controlled vibrato":"Kontrollü vibrato",
+ "Warm and smoky":"Sıcak ve dumanlı","Raw and emotional":"Ham ve duygusal",
+ // Vocal FX
+ "Hall reverb":"Salon reverb","Room reverb":"Oda reverb","Church reverb":"Kilise reverb",
+ "Plate reverb":"Plate reverb","Short delay":"Kısa delay","Long echo":"Uzun yankı",
+ "Slapback echo":"Slapback yankı","Lo-fi telephone effect":"Lo-fi telefon efekti",
+ "Dry vocal, minimal reverb":"Kuru vokal (az reverb)","Doubled vocals":"İkili (doubling)",
+ "Layered harmonies":"Katmanlı harmoniler",
+ // Ranges
+ "Coloratura soprano":"Koloratur soprano","Lyric soprano":"Lirik soprano",
+ "Dramatic soprano":"Dramatik soprano","Soprano":"Soprano","Mezzo-soprano":"Mezzosoprano",
+ "Contralto":"Kontralto","Countertenor":"Kontrtenor","Lyric tenor":"Lirik tenor",
+ "Dramatic tenor":"Dramatik tenor","Tenor":"Tenor","Baritone":"Bariton",
+ "Bass-baritone":"Bas-bariton","Bass":"Bas","Basso profondo":"Basso profondo (derin)",
+ // Mix
+ "Warm mixing":"Sıcak mix","Bright mixing":"Parlak mix","Dark mixing":"Karanlık mix",
+ "Balanced mixing":"Dengeli mix",
+ // Production
+ "Clean modern studio production":"Temiz modern stüdyo","Lo-fi vintage warmth":"Lo-fi vintage sıcaklık",
+ "Minimal sparse arrangement":"Minimal aranjman","Layered and complex production":"Katmanlı/karmaşık prodüksiyon",
+ "Raw live performance feel":"Ham canlı performans hissi","Atmospheric spacious production":"Atmosferik geniş prodüksiyon",
+ "Polished radio-ready mix":"Cilalı radyoya hazır","Analog tape saturation":"Analog kaset doyumu",
+ "Close-mic intimate recording":"Yakın-mikrofon samimi kayıt",
+ // Sections
+ "Verse":"Kıta","Pre-Chorus":"Ön nakarat","Chorus":"Nakarat","Hook":"Hook (kanca)",
+ "Bridge":"Köprü","Break":"Geçiş","Instrumental":"Enstrümantal",
+ // Energy
+ "Build and sustain (epic)":"İnşa et ve sürdür (epik)",
+ "Crescendo, slow start strong finish":"Crescendo (yavaş başla, güçlü bitir)",
+ "Decrescendo, fade out style":"Decrescendo (azalan, fade out)",
+ "Wave, dynamic contrast":"Dalga (dinamik kontrast)",
+ "Consistent driving energy":"Sürekli sürükleyici enerji",
+ "Explosive bookends, soft middle":"Patlayıcı uçlar, yumuşak orta",
+ "Gradual progressive build":"Kademeli inşa","Explosive start then stable":"Patlayıcı başlangıç, sonra stabil",
+ "Climactic peak in the middle":"Doruk ortada","Shifting experimental dynamics":"Değişen deneysel dinamikler",
+ // Genres (selective — only the non-obvious)
+ "Classical":"Klasik","Folk":"Halk müziği","Electronic":"Elektronik","Cinematic":"Sinematik",
+ "World Music":"Dünya müziği","Children's Music":"Çocuk şarkıları","Holiday/Christmas":"Yılbaşı/Noel",
+ "Soundtrack/Score":"Film müziği","Marching Band":"Bando","Lounge":"Lounge (atmosferik)",
+ "Spoken Word":"Sözlü anlatım","Singer-Songwriter":"Şarkıcı-söz yazarı",
+ "Jazz":"Caz","Blues":"Blues","Country":"Country (Amerikan halk)",
+ // Articulation
+ "Mikrotonal süslemeler":"Mikrotonal süslemeler","Çarpma süsleme":"Çarpma süsleme",
+ "Sürekli vibrato":"Sürekli vibrato","Glissando geçişleri":"Glissando geçişleri",
+ "Çeyrek ton kayması":"Çeyrek ton kayması","Maqam taksim açılışı":"Maqam taksim açılışı",
+ // Languages — keep English-looking value, add Turkish hint
+ "English":"İngilizce","French":"Fransızca","Spanish":"İspanyolca","Portuguese":"Portekizce",
+ "Italian":"İtalyanca","German":"Almanca","Russian":"Rusça","Polish":"Lehçe","Greek":"Yunanca",
+ "Arabic":"Arapça","Hebrew":"İbranice","Hindi":"Hintçe","Bengali":"Bengalce","Punjabi":"Pencapça",
+ "Mandarin Chinese":"Mandarin","Cantonese":"Kantonca","Japanese":"Japonca","Korean":"Korece",
+ "Vietnamese":"Vietnamca","Thai":"Tayca","Indonesian":"Endonezce","Tagalog":"Tagalogca",
+ "Swahili":"Svahili","Zulu":"Zulu","Amharic":"Amharca","Yoruba":"Yoruba","Igbo":"İbo",
+ "Catalan":"Katalanca","Galician":"Galiçyaca","Basque":"Baskça","Swedish":"İsveççe",
+ "Norwegian":"Norveççe","Finnish":"Fince","Danish":"Danca","Icelandic":"İzlandaca",
+ "Persian (Farsi)":"Farsça","Urdu":"Urduca","Latin":"Latince","Dutch":"Felemenkçe",
+ "Brazilian Portuguese":"Brezilya Portekizcesi","Bulgarian":"Bulgarca","Romanian":"Rumence",
+ "Hungarian":"Macarca","Czech":"Çekçe","Ukrainian":"Ukraynaca","Yiddish":"Yidiş",
+ "Afrikaans":"Afrikaanca","Latin America":"Latin Amerika dilleri","Middle Eastern":"Orta Doğu",
+ "Balkan":"Balkanca","Turkish":"Türkçe","Kurdish":"Kürtçe"
+};
+
 /* ====== HELPERS ====== */
 const $=id=>document.getElementById(id);
 const S={}; // select element refs
+function trLabel(s){return TR[s]?s+" ("+TR[s]+")":s;}
 function mkSelect(id,label,opts,parent,grouped){
   const f=document.createElement('label');f.className='field';
   f.innerHTML=`<b>${label}</b>`;
@@ -755,8 +877,11 @@ function fill(s,opts,grouped){
   const keep=s.value;
   s.innerHTML=`<option value="">— seçin —</option>`;
   if(grouped){for(const g in opts){const og=document.createElement('optgroup');og.label=g;
-    opts[g].forEach(o=>og.appendChild(new Option(o,o)));s.appendChild(og);}}
-  else opts.forEach(o=>{Array.isArray(o)?s.appendChild(new Option(o[1]+" — "+o[0],o[0])):s.appendChild(new Option(o,o));});
+    opts[g].forEach(o=>og.appendChild(new Option(trLabel(o),o)));s.appendChild(og);}}
+  else opts.forEach(o=>{
+    if(Array.isArray(o))s.appendChild(new Option(o[1]+" — "+o[0],o[0]));
+    else s.appendChild(new Option(trLabel(o),o));
+  });
   if([...s.options].some(o=>o.value===keep))s.value=keep;
 }
 const val=id=>S[id]?S[id].value:($(id)?$(id).value.trim():'');
