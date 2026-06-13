@@ -297,8 +297,8 @@ Output ONLY the lyrics text, NO explanation, NO markdown — start with the firs
 
       let body;
       try { body = await req.json(); } catch { return json({ error: "bad json" }, 400); }
-      const prompt = (body.prompt || "").slice(0, 4000);
-      const userSys = (body.system || "").slice(0, 4000);
+      const prompt = (body.prompt || "").slice(0, 25000);
+      const userSys = (body.system || "").slice(0, 8000);
       const provider = ["gemini","claude","gpt"].includes(body.provider) ? body.provider : "gemini";
       if (!prompt) return json({ error: "empty" }, 400);
 
@@ -333,7 +333,9 @@ Output ONLY the lyrics text, NO explanation, NO markdown — start with the firs
         await rate.increment();
         return json({ text: out });
       } catch (e) {
-        return json({ error: "upstream", detail: String(e.message || e).slice(0, 200) }, 502);
+        const msg = String(e.message || e);
+        console.error("[enhance fail]", msg);
+        return json({ error: msg.slice(0, 300) }, 502);
       }
     }
 

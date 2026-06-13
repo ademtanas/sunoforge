@@ -1271,7 +1271,10 @@ $('btnAIRun').onclick=async()=>{
         prompt:"Draft prompt:\n"+cur+(val('exclude')?"\n\nExclude styles (separate field, keep out of main prompt): "+val('exclude'):"")})});
     if(r.status===429)throw new Error("Günlük ücretsiz AI hakkınız doldu, yarın tekrar deneyin.");
     if(r.status===501)throw new Error("Bu model henüz aktif değil, başka model seçin.");
-    if(!r.ok)throw new Error("sunucu hatası ("+r.status+")");
+    if(!r.ok){
+      let detail='';try{const eb=await r.json();detail=eb.error||eb.detail||'';}catch{}
+      throw new Error("sunucu hatası ("+r.status+")"+(detail?": "+detail.slice(0,200):''));
+    }
     const data=await r.json();
     const txt=(data.text||'').trim();
     if(!txt)throw new Error('boş yanıt');
