@@ -36,13 +36,28 @@ const ANALYSIS_SCHEMA = `{
   "time_signature": "4/4 or 7/8 aksak or 9/8 aksak zeybek etc",
   "key": "musical key or 'Hicaz makam' / 'Hüseyni makam' if Turkish modal",
   "mood": "primary emotional tone (one word)",
+  "mood_arc": "Türkçe: zaman içinde duygu değişimi (örn 'Intro hüzünlü → Chorus epik → Bridge umutlu')",
   "harmony": "Major/Minor/Modal (maqam-based)/Pentatonic/Harmonic minor/Blues",
+  "chord_progression": "tahmini akor ilerlemesi (örn 'Am - F - C - G' veya 'Hicaz makam: A-Bb-C#-D-E-F-G-A')",
   "instruments": {"lead":"","accompaniment":"","bass":"","percussion":""},
   "vocal_dna": {"type":"","register":"","timbre":"","technique":"","effects":"","emotion":""},
   "structure": [{"section":"Intro","start":"0:00","duration":8,"energy":"low"}],
   "hook": {"description":"","location":""},
   "production_style": "DESCRIPTIVE production aesthetic (NEVER generic radio-ready)",
   "mix_character": "Warm/Bright/Dark/Balanced",
+  "arrangement_density": "Sparse / Moderate / Dense — kısa Türkçe açıklama parantezde",
+  "stereo_image": "Mono / Narrow / Wide — Türkçe parantez (örn 'Wide (geniş, derinlikli)')",
+  "frequency_balance": "bass-mid-treble dengesi — Türkçe değerlendirme",
+  "dynamics": "Compressed / Natural / Wide dynamic — Türkçe parantez",
+  "mastering_quality": "loudness, headroom, clipping notları — Türkçe değerlendirme",
+  "lyrics_transcription": "şarkı sözleri orijinal dilde, eğer vokal varsa; instrumental ise boş",
+  "lyrics_translation_tr": "Türkçe çeviri (orijinal Türkçe değilse); aynı dilse boş",
+  "lyrics_theme": "Türkçe: sözlerin teması, hikaye, ne anlatıyor",
+  "cultural_context": "Türkçe: müzik geleneği, çağrıştırdığı dönem/yer, sosyal/tarihi bağlam",
+  "similar_style_artists": ["3 stil-benzeri sanatçı/parça — Türkçe sanatçı adı verebilirsin"],
+  "strengths": ["parçanın 3 güçlü yanı (Türkçe, kısa)"],
+  "improvement_suggestions": ["3 iyileştirme/önerisi (Türkçe, kısa)"],
+  "target_audience": "Türkçe: hedef dinleyici kitlesi",
   "suno_prompt": "ready Suno-style prompt in English, under 600 chars, derived from analysis, no clichés",
   "remix_ideas": ["3 short reinterpretation directions"],
   "user_note": "short Turkish note for the user about distinctive elements"
@@ -196,10 +211,10 @@ export default {
         const text = await callGemini(
           env, GEMINI_FLASH, system,
           [
-            { text: `Analyze this track${youtubeUrl ? ' (YouTube video — focus on the music, not visuals)' : ''}. Return ONLY JSON with this schema:\n${ANALYSIS_SCHEMA}\n\nIMPORTANT: Keep structure array to at most 8 sections. Keep all string fields concise.` },
+            { text: `Perform a DEEP, COMPREHENSIVE analysis of this track${youtubeUrl ? ' (YouTube — focus on the music)' : ''}. Listen carefully, transcribe lyrics if any, identify cultural context, suggest similar artists. Return ONLY JSON with this exact schema:\n${ANALYSIS_SCHEMA}\n\nRULES:\n- structure array max 8 sections\n- arrays (similar_style_artists, strengths, improvement_suggestions, remix_ideas) exactly 3 items\n- Türkçe alanlar Türkçe yazılsın, English alanlar İngilizce\n- lyrics_transcription: vokal varsa transkripsiyon, instrumental ise empty string\n- Be specific and musical, no generic clichés.` },
             mediaPart
           ],
-          8000, true
+          10000, true
         );
         let dna;
         try { dna = safeJson(text); }

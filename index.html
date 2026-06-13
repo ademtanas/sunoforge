@@ -292,13 +292,13 @@ footer{margin-top:30px;color:var(--dim);font-size:12px;text-align:center}
   </section>
 
   <div class="modes" id="modeSwitch">
-    <button data-m="song" class="active" type="button">🎵 Şarkı</button>
+    <button data-m="analyze" class="active" type="button">🎯 Tarz Analizi</button>
+    <button data-m="song" type="button">🎵 Şarkı</button>
     <button data-m="clip" type="button">🎬 Klip</button>
-    <button data-m="analyze" type="button">🎯 Tarz Analizi</button>
     <button data-m="lyrics" type="button">✍️ Söz Yazarı</button>
   </div>
 
-  <div id="modeSong">
+  <div id="modeSong" hidden>
 
   <div class="songbar">
     <button class="btn small" id="btnRandom" type="button">🎲 Şanslıyım</button>
@@ -442,9 +442,9 @@ footer{margin-top:30px;color:var(--dim);font-size:12px;text-align:center}
     </details>
   </div><!-- /modeClip -->
 
-  <div id="modeAnalyze" hidden>
+  <div id="modeAnalyze">
     <details class="card" open>
-      <summary><span class="num">A1</span><h2>🎯 Tarz Analizi</h2><span class="hint">audio yükle, AI dinlesin (mp3/wav/m4a, ≤20MB)</span></summary>
+      <summary><span class="num">A1</span><h2>🎯 Tarz Analizi (Derin Analiz)</h2><span class="hint">audio yükle veya YouTube linki ver — AI derinden dinler</span></summary>
       <div class="body">
         <div class="subhead">Yöntem 1 — Ses Dosyası</div>
         <div class="secbtns">
@@ -1449,7 +1449,7 @@ $('btnAIFill').onclick=async()=>{
 };
 
 /* ====== CLIP MODE ====== */
-let currentMode='song';
+let currentMode='analyze';
 const gCM=$('gridClipMeta'),gCV=$('gridClipVisual');
 mkSelect('clipGenre','Şarkı Türü (Genre)',D.genres,gCM);
 mkSelect('clipMood','Duygu (Mood)',D.moods,gCM);
@@ -1699,6 +1699,9 @@ function renderAnalyze(p,up){
   const tag=(label,val)=>val?`<div><b>${label}:</b> ${val}</div>`:'';
   const struct=(p.structure||[]).map(s=>`<div class="row"><span>${s.section||'?'}</span><span style="color:var(--dim)">${s.start||''} · ${s.duration||''}s</span><span class="e-${(s.energy||'medium').toLowerCase()}">${s.energy||''}</span></div>`).join('');
   const remix=(p.remix_ideas||[]).map(x=>`<div class="rx">💡 ${x}</div>`).join('');
+  const esc=s=>String(s||'').replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+  const list=(arr,emoji='•')=>(arr||[]).map(x=>`<div class="rx">${emoji} ${esc(x)}</div>`).join('');
+  const block=(label,val)=>val?`<div class="note" style="line-height:1.65"><b style="color:var(--amber2)">${label}:</b> ${esc(val)}</div>`:'';
   r.innerHTML=`
     <div class="persec">
       <h4>📊 Analiz Sonucu ${cached}</h4>
@@ -1712,10 +1715,33 @@ function renderAnalyze(p,up){
         ${tag('Vokal',v.type)}${tag('Aralık',v.register)}
         ${tag('Tını',v.timbre)}${tag('Teknik',v.technique)}
         ${tag('Vokal FX',v.effects)}${tag('Vokal Duygu',v.emotion)}
-        ${tag('Prodüksiyon',p.production_style)}
       </div>
-      ${p.hook&&p.hook.description?`<div class="note"><b style="color:var(--amber2)">🪝 Hook:</b> ${p.hook.description}${p.hook.location?' <i style="color:var(--dim)">('+p.hook.location+')</i>':''}</div>`:''}
+
+      ${p.hook&&p.hook.description?`<div class="note" style="margin-top:8px"><b style="color:var(--amber2)">🪝 Hook:</b> ${esc(p.hook.description)}${p.hook.location?' <i style="color:var(--dim)">('+esc(p.hook.location)+')</i>':''}</div>`:''}
+      ${block('🎢 Duygu Akışı',p.mood_arc)}
+      ${block('🎼 Akor İlerlemesi',p.chord_progression)}
+
       ${struct?`<div class="subhead">🧱 Bölüm Haritası</div><div class="struct-list">${struct}</div>`:''}
+
+      <div class="subhead">🎚️ Mix &amp; Mastering Derinliği</div>
+      ${block('🎛️ Prodüksiyon',p.production_style)}
+      ${block('🌫️ Aranjman Yoğunluğu',p.arrangement_density)}
+      ${block('🔊 Stereo İmajı',p.stereo_image)}
+      ${block('📊 Frekans Dengesi',p.frequency_balance)}
+      ${block('📈 Dinamik',p.dynamics)}
+      ${block('🎚 Master Kalitesi',p.mastering_quality)}
+
+      ${p.lyrics_transcription?`<div class="subhead">📝 Şarkı Sözleri (Transkripsiyon)</div>
+        <textarea readonly style="min-height:140px;background:var(--bg)">${esc(p.lyrics_transcription)}</textarea>`:''}
+      ${p.lyrics_translation_tr?`<div class="subhead">🇹🇷 Türkçe Çeviri</div>
+        <textarea readonly style="min-height:140px;background:var(--bg)">${esc(p.lyrics_translation_tr)}</textarea>`:''}
+      ${block('📖 Sözlerin Teması',p.lyrics_theme)}
+      ${block('🌍 Kültürel Bağlam',p.cultural_context)}
+      ${block('🎯 Hedef Kitle',p.target_audience)}
+
+      ${p.similar_style_artists&&p.similar_style_artists.length?`<div class="subhead">👥 Stil Benzeri Sanatçılar</div><div class="remix-list">${list(p.similar_style_artists,'🎤')}</div>`:''}
+      ${p.strengths&&p.strengths.length?`<div class="subhead">✅ Güçlü Yanlar</div><div class="remix-list">${list(p.strengths,'✓')}</div>`:''}
+      ${p.improvement_suggestions&&p.improvement_suggestions.length?`<div class="subhead">💡 İyileştirme Önerileri</div><div class="remix-list">${list(p.improvement_suggestions,'→')}</div>`:''}
       ${remix?`<div class="subhead">🔀 Remix Fikirleri</div><div class="remix-list">${remix}</div>`:''}
 
       <div class="subhead">🎯 Suno Style Prompt</div>
@@ -1891,7 +1917,9 @@ $('btnLyricsSend').onclick=()=>{
 /* PWA service worker */
 if('serviceWorker' in navigator && location.protocol==='https:')
   navigator.serviceWorker.register('sw.js').catch(()=>{});
-/* init */
+/* init — varsayılan mod: Tarz Analizi, console gizli */
+document.querySelector('.console').style.display='none';
+document.body.style.paddingBottom='30px';
 updateConditionalFields();
 build();
 
